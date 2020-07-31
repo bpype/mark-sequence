@@ -5,7 +5,7 @@ import argparse
 import os
 
 
-def markImage(path, output_path, data):
+def mark_image(path, output_path, data):
     print("Frame %i" % data['frame_number'])
 
     args = ['F:\\TECH\\libs\\ImageMagick_Custom\\convert.exe']
@@ -77,42 +77,42 @@ def markImage(path, output_path, data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Make a movie output of a list of images.')
-    parser.add_argument('--imagesdir', metavar='imagesdir', type=str, default="",
-                        help='Foldercontaining the images')
-    parser.add_argument('--commentaire', metavar='commentaire', type=str, default="",
-                        help='Commentaire marque sous la video')
+    parser.add_argument('--image_dir', metavar='image_dir', type=str, default="",
+                        help='Folder containing the images')
+    parser.add_argument('--comment', metavar='comment', type=str, default="",
+                        help='Comment added underneath the video')
     parser.add_argument('--shot', metavar='shot', type=str,
-                        help='shot name in top left corner of the video')
+                        help='Shot name in top left corner of the video')
     parser.add_argument('--user', metavar='user', type=str, default=getpass.getuser(),
-                        help='user responsible for the render')
-    parser.add_argument('--host', metavar='host', type=str, default="",
-                        help='render launched from this hostname')
+                        help='User responsible for the render')
+    parser.add_argument('--hostname', metavar='hostname', type=str, default="",
+                        help='Render run from this hostname')
     parser.add_argument('--source', metavar='source', type=str, default="",
-                        help='aep/blender or any source filename')
+                        help='Aep/blender or any source filename')
     parser.add_argument('--start_frame', metavar='start_frame', type=int,
-                        help='start frame')
+                        help='Start frame')
     parser.add_argument('--end_frame', metavar='end_frame', type=int,
-                        help='end_frame')
+                        help='End_frame')
     parser.add_argument('--offset', metavar='offset', type=int, default=0,
-                        help='offset for renaming frames')
-    parser.add_argument('--bits', metavar='bits', type=str, default="8",
-                        help='bits 8 (default) or 16')
+                        help='Offset for renaming frames')
+    # parser.add_argument('--bits', metavar='bits', type=str, default="8",
+    #                     help='Bits: 8 (default) or 16')
     parser.add_argument('--duration', metavar='duration', type=int, default=0,
-                        help='total number of images of sequence')
+                        help='Total number of images of sequence')
     # parser.add_argument('--status', metavar='status', type=str, default="WIP",
-    #                     help='shot current status')
+    #                     help='Shot current status')
     parser.add_argument('--date', metavar='date', type=str, default=datetime.datetime.now().strftime("%d-%m-%y %H:%M"),
-                        help='override date')
+                        help='Override date')
     parser.add_argument('--copyright', metavar='date', type=str, default="(C) Ne pas Diffuser",
-                        help='override date')
-    parser.add_argument('--markfolder', metavar='markfolder', type=str,
+                        help='Override date')
+    parser.add_argument('--mark_folder', metavar='mark_folder', type=str,
                         help='Leave blank for tmp folder')
     parser.add_argument('--current', action='store_true',
                         help="Set the output also as current")
     parser.add_argument('--output', metavar='output', type=str, help="the output .mov MOVIE destination")
     args = parser.parse_args()
 
-    mark_folder = args.markfolder
+    mark_folder = args.mark_folder
     if not os.path.exists(mark_folder):
         os.makedirs(mark_folder)
 
@@ -121,20 +121,20 @@ if __name__ == "__main__":
     data = {
         'resolution_x': 0,
         'resolution_y': 0,
-        'user': args.user,  # getpass.getuser(),
-        'hostname': args.host,
-        'source': args.source,
-        # 'status': args.status,
-        'copyright': args.copyright,
         'frame_number': 0,
         'normalized_frame_number': 0,
+        'font_size': 16,
+        'user': args.user,  # getpass.getuser(),
+        'hostname': args.hostname,
+        'source': args.source,
+        'copyright': args.copyright,
         'offset': args.offset,
         'date': args.date,
         'shot_name': args.shot,
         'commentaire': args.commentaire,
-        'font_size': 16,
-        'bits': args.bits,
         'total_images': args.duration,
+        # 'status': args.status,
+        # 'bits': args.bits,
     }
 
     film, seq, shot = args.shot.split()
@@ -143,8 +143,8 @@ if __name__ == "__main__":
 
     for i in range(args.start_frame, args.end_frame + 1):
         # Remove marked frames
-        image_source = os.path.join(args.imagesdir, "%s_%s.%04i.exr" % (seq, shot, i))
-        image_marked = os.path.join(args.markfolder, "marked.%04i.exr" % (i - args.offset + 1))
+        image_source = os.path.join(args.image_dir, "%s_%s.%04i.exr" % (seq, shot, i))
+        image_marked = os.path.join(args.mark_folder, "marked.%04i.exr" % (i - args.offset + 1))
         # Get resolution
         print("Processing %s" % image_source)
         res = subprocess.check_output(['F:\\TECH\\libs\\ImageMagick_Custom\\identify.exe', '-format', '%wx%h', image_source])
@@ -158,4 +158,4 @@ if __name__ == "__main__":
 
         data['normalized_frame_number'] = i - args.offset + 1
         data['frame_number'] = i
-        markImage(image_source, image_marked, data)
+        mark_image(image_source, image_marked, data)
