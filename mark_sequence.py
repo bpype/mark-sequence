@@ -105,8 +105,8 @@ def mark_image(path, output_path, data):
                  '0',
                  '"%s"' % (data['copyright'])])
                  # '"%s - Current status : %s"' % (data["copyright"], data['status'])])
-    # Comment
 
+    # Comment
     if data['comment']:
         args.extend(['-gravity',
                      'South',
@@ -165,24 +165,6 @@ if __name__ == "__main__":
         mark_dir = args.mark_dir
     else:
         mark_dir = TemporaryDirectory().name
-
-    # data = {
-    #     'resolution_x': 0,
-    #     'resolution_y': 0,
-    #     'frame_number': 0,
-    #     'normalized_frame_number': 0,
-    #     'font_size': 16,
-    #     'user': args.user,  # getpass.getuser(),
-    #     'hostname': args.hostname,
-    #     'source': args.source,
-    #     'copyright': args.copyright,
-    #     'offset': args.offset,
-    #     'date': args.date,
-    #     'shot_name': args.shot,
-    #     'comment': args.comment,
-    #     'total_images': args.duration,
-    #     # 'status': args.status,
-    # }
 
     data = {'font_size': 16,}
     data.update(vars(args))
