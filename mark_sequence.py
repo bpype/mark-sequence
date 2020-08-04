@@ -25,10 +25,9 @@ import argparse
 import os
 
 
-def mark_image(path, output_path, data):
-    print("Frame %i" % data['frame_number'])
 
-    args = ['F:\\TECH\\libs\\ImageMagick_Custom\\convert.exe']
+def mark_image(path, output_path, data):
+    args = ['convert']
     args += ['"%s"' % path]
 
     # Add gray band overlay
@@ -46,7 +45,7 @@ def mark_image(path, output_path, data):
     args.extend(['-fill', 'white', '-pointsize', str(data['font_size'])])
 
     # Shot name / Frame number
-    args.extend(['-gravity', 'NorthWest', '-annotate', "0", '"%s   %s"' % (data['shot_name'], data['frame_number'])])
+    args.extend(['-gravity', 'NorthWest', '-annotate', "0", '"%s   %s"' % (data['shot'], data['frame_number'])])
     # Normalized current frame
     args.extend(['-gravity',
                  'North',
@@ -64,8 +63,8 @@ def mark_image(path, output_path, data):
                  'SouthEast',
                  '-annotate',
                  '0',
-                 '"LFS %10s %10s %s"' % (data['user'], data['hostname'], data['date'])])
-    # Copryright / Status
+                 '"%10s %10s %s"' % (data['user'], data['hostname'], data['date'])])
+    # Copyright / Status
     args.extend(['-gravity',
                  'SouthWest',
                  '-annotate',
@@ -74,12 +73,12 @@ def mark_image(path, output_path, data):
                  # '"%s - Current status : %s"' % (data["copyright"], data['status'])])
     # Comment
 
-    if data['commentaire']:
+    if data['comment']:
         args.extend(['-gravity',
                      'South',
                      '-annotate',
                      '0',
-                     '"%s"' % data['commentaire']])
+                     '"%s"' % data['comment']])
 
     # Debug alpha channel
     args.extend(['-alpha', 'remove'])
@@ -88,48 +87,43 @@ def mark_image(path, output_path, data):
     # Output
     args.append('"%s"' % output_path)  # Output path
     j = " ".join(args)
-    print(j)
     proc = subprocess.check_output(j, shell=True)
-    print(proc)
     #os.system('%s' % j)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Make a movie output of a list of images.')
-    parser.add_argument('--image_dir', metavar='image_dir', type=str, default="",
-                        help='Folder containing the images')
-    parser.add_argument('--comment', metavar='comment', type=str, default="",
-                        help='Comment added underneath the video')
-    parser.add_argument('--shot', metavar='shot', type=str,
-                        help='Shot name in top left corner of the video')
-    parser.add_argument('--user', metavar='user', type=str, default=getpass.getuser(),
-                        help='User responsible for the render')
-    parser.add_argument('--hostname', metavar='hostname', type=str, default="",
-                        help='Render run from this hostname')
-    parser.add_argument('--source', metavar='source', type=str, default="",
-                        help='Aep/blender or any source filename')
-    parser.add_argument('--start_frame', metavar='start_frame', type=int,
-                        help='Start frame')
-    parser.add_argument('--end_frame', metavar='end_frame', type=int,
-                        help='End_frame')
-    parser.add_argument('--offset', metavar='offset', type=int, default=0,
-                        help='Offset for renaming frames')
-    # parser.add_argument('--bits', metavar='bits', type=str, default="8",
-    #                     help='Bits: 8 (default) or 16')
-    parser.add_argument('--duration', metavar='duration', type=int, default=0,
-                        help='Total number of images of sequence')
-    # parser.add_argument('--status', metavar='status', type=str, default="WIP",
-    #                     help='Shot current status')
-    parser.add_argument('--date', metavar='date', type=str, default=datetime.datetime.now().strftime("%d-%m-%y %H:%M"),
-                        help='Override date')
-    parser.add_argument('--copyright', metavar='date', type=str, default="(C) Ne pas Diffuser",
-                        help='Override date')
-    parser.add_argument('--mark_folder', metavar='mark_folder', type=str,
-                        help='Leave blank for tmp folder')
-    parser.add_argument('--current', action='store_true',
-                        help="Set the output also as current")
-    parser.add_argument('--output', metavar='output', type=str, help="the output .mov MOVIE destination")
+        description='Make an annotated movie output from a list of images')
+    parser.add_argument('sequence', type=str,
+                        help='file sequence, typically a frame in the sequence')
+    parser.add_argument('--mark-dir', type=str,
+                        help='intermediate directory, leave blank for tmp dir')
+
+    # parser.add_argument('--start_frame', type=int,
+    #                     help='start frame')
+    # parser.add_argument('--end_frame', type=int,
+    #                     help='end_frame')
+    parser.add_argument('--offset', type=int, default=0,
+                        help='offset for renaming frames')
+
+    parser.add_argument('--comment', type=str, default="",
+                        help='comment added underneath the video')
+    parser.add_argument('--shot', type=str,
+                        help='shot name in top left corner of the video')
+    parser.add_argument('--user', type=str, default=getpass.getuser(),
+                        help='user responsible for the render')
+    parser.add_argument('--hostname', type=str, default="",
+                        help='render run from this hostname')
+    parser.add_argument('--source', type=str, default="",
+                        help='file used to generate this sequence')
+    # parser.add_argument('--duration', type=int, default=0,
+                        # help='total number of images of sequence')
+    # parser.add_argument('--status', type=str, default="WIP",
+    #                     help='shot current status')
+    parser.add_argument('--date', type=str, default=datetime.datetime.now().strftime("%d-%m-%y %H:%M"),
+                        help='override date')
+    parser.add_argument('--copyright', metavar='date', type=str, default="(C) Ne pas diffuser",
+                        help='copyright information')
     args = parser.parse_args()
 
     mark_folder = args.mark_folder
@@ -167,12 +161,12 @@ if __name__ == "__main__":
         image_marked = os.path.join(args.mark_folder, "marked.%04i.exr" % (i - args.offset + 1))
         # Get resolution
         print("Processing %s" % image_source)
-        res = subprocess.check_output(['F:\\TECH\\libs\\ImageMagick_Custom\\identify.exe', '-format', '%wx%h', image_source])
+        res = subprocess.check_output(['identify', '-format', '%wx%h', image_source])
         res_x, res_y = res.decode('ascii').split("x")
-        if not resolution_x:
+        if resolution_x is None:
             resolution_x = res_x
             data['resolution_x'] = int(res_x)
-        if not resolution_y:
+        if resolution_y is None:
             resolution_y = res_y
             data['resolution_y'] = int(res_y)
 
