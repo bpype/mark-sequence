@@ -98,13 +98,12 @@ def mark_image(path, output_path, data):
                  '-annotate',
                  '0',
                  '"%10s %10s %s"' % (data['user'], data['hostname'], data['date'])])
-    # Copyright / Status
+    # Copyright
     args.extend(['-gravity',
                  'SouthWest',
                  '-annotate',
                  '0',
                  '"%s"' % (data['copyright'])])
-                 # '"%s - Current status : %s"' % (data["copyright"], data['status'])])
 
     # Comment
     if data['comment']:
@@ -122,7 +121,6 @@ def mark_image(path, output_path, data):
     args.append('"%s"' % output_path)  # Output path
     j = " ".join(args)
     proc = subprocess.check_output(j, shell=True)
-    #os.system('%s' % j)
 
 
 if __name__ == "__main__":
@@ -133,10 +131,6 @@ if __name__ == "__main__":
     parser.add_argument('--mark-dir', type=str,
                         help='intermediate directory, leave blank for tmp dir')
 
-    # parser.add_argument('--start_frame', type=int,
-    #                     help='start frame')
-    # parser.add_argument('--end_frame', type=int,
-    #                     help='end_frame')
     parser.add_argument('--offset', type=int, default=0,
                         help='offset for renaming frames')
 
@@ -150,10 +144,6 @@ if __name__ == "__main__":
                         help='render run from this hostname')
     parser.add_argument('--source', type=str, default="",
                         help='file used to generate this sequence')
-    # parser.add_argument('--duration', type=int, default=0,
-                        # help='total number of images of sequence')
-    # parser.add_argument('--status', type=str, default="WIP",
-    #                     help='shot current status')
     parser.add_argument('--date', type=str, default=datetime.datetime.now().strftime("%d-%m-%y %H:%M"),
                         help='override date')
     parser.add_argument('--copyright', metavar='date', type=str, default="(C) Ne pas diffuser",
@@ -168,8 +158,6 @@ if __name__ == "__main__":
 
     data = {'font_size': 16,}
     data.update(vars(args))
-
-    # film, seq, shot = args.shot.split()
 
     resolution_x = None
     resolution_y = None
