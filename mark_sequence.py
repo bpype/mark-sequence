@@ -23,8 +23,8 @@ import getpass
 import datetime
 import argparse
 import os
-
-
+from tempfile import TemporaryDirectory
+import fileseq
 
 def mark_image(path, output_path, data):
     args = ['convert']
@@ -126,40 +126,47 @@ if __name__ == "__main__":
                         help='copyright information')
     args = parser.parse_args()
 
-    mark_folder = args.mark_folder
-    if not os.path.exists(mark_folder):
-        os.makedirs(mark_folder)
+    if args.mark_dir:
+        os.makedirs(args.mark_dir, exist_ok=True)
+        mark_dir = args.mark_dir
+    else:
+        mark_dir = TemporaryDirectory().name
 
-    # Clean mark folder if needed
+    # data = {
+    #     'resolution_x': 0,
+    #     'resolution_y': 0,
+    #     'frame_number': 0,
+    #     'normalized_frame_number': 0,
+    #     'font_size': 16,
+    #     'user': args.user,  # getpass.getuser(),
+    #     'hostname': args.hostname,
+    #     'source': args.source,
+    #     'copyright': args.copyright,
+    #     'offset': args.offset,
+    #     'date': args.date,
+    #     'shot_name': args.shot,
+    #     'comment': args.comment,
+    #     'total_images': args.duration,
+    #     # 'status': args.status,
+    # }
 
-    data = {
-        'resolution_x': 0,
-        'resolution_y': 0,
-        'frame_number': 0,
-        'normalized_frame_number': 0,
-        'font_size': 16,
-        'user': args.user,  # getpass.getuser(),
-        'hostname': args.hostname,
-        'source': args.source,
-        'copyright': args.copyright,
-        'offset': args.offset,
-        'date': args.date,
-        'shot_name': args.shot,
-        'commentaire': args.commentaire,
-        'total_images': args.duration,
-        # 'status': args.status,
-        # 'bits': args.bits,
-    }
+    data = {'font_size': 16,}
+    data.update(vars(args))
 
-    film, seq, shot = args.shot.split()
+    # film, seq, shot = args.shot.split()
+
     resolution_x = None
     resolution_y = None
 
-    for i in range(args.start_frame, args.end_frame + 1):
-        # Remove marked frames
-        image_source = os.path.join(args.image_dir, "%s_%s.%04i.exr" % (seq, shot, i))
-        image_marked = os.path.join(args.mark_folder, "marked.%04i.exr" % (i - args.offset + 1))
-        # Get resolution
+    file_sequence = fileseq.findSequenceOnDisk(os.path.abspath(args.sequence))
+    frame_set = file_sequence.frameSet()
+
+    data['total_images'] = frame_set[-1] - args.offset
+
+    # for i in range(args.start_frame, args.end_frame + 1):
+    for i in file_sequence.frameSet():
+        image_source = file_sequence.frame(i)
+        image_marked = os.path.join(mark_dir, "marked.%04i.exr" % (i - args.offset))
         print("Processing %s" % image_source)
         res = subprocess.check_output(['identify', '-format', '%wx%h', image_source])
         res_x, res_y = res.decode('ascii').split("x")
@@ -170,6 +177,6 @@ if __name__ == "__main__":
             resolution_y = res_y
             data['resolution_y'] = int(res_y)
 
-        data['normalized_frame_number'] = i - args.offset + 1
+        data['normalized_frame_number'] = i - args.offset
         data['frame_number'] = i
         mark_image(image_source, image_marked, data)
