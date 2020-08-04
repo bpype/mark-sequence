@@ -177,12 +177,12 @@ if __name__ == "__main__":
     file_sequence = fileseq.findSequenceOnDisk(os.path.abspath(args.sequence))
     frame_set = file_sequence.frameSet()
 
-    data['total_images'] = frame_set[-1] - args.offset
+    data['total_images'] = len(frame_set)
 
     # for i in range(args.start_frame, args.end_frame + 1):
-    for i in file_sequence.frameSet():
-        image_source = file_sequence.frame(i)
-        image_marked = os.path.join(mark_dir, "marked.%04i.exr" % (i - args.offset))
+    for i, image_number in enumerate(file_sequence.frameSet()):
+        image_source = file_sequence.frame(image_number)
+        image_marked = os.path.join(mark_dir, "marked.%04i.exr" % (i - args.offset + 1))
         print("Processing %s" % image_source)
         res = subprocess.check_output(['identify', '-format', '%wx%h', image_source])
         res_x, res_y = res.decode('ascii').split("x")
@@ -193,6 +193,6 @@ if __name__ == "__main__":
             resolution_y = res_y
             data['resolution_y'] = int(res_y)
 
-        data['normalized_frame_number'] = i - args.offset
-        data['frame_number'] = i
+        data['normalized_frame_number'] = i - args.offset + 1
+        data['frame_number'] = image_number
         mark_image(image_source, image_marked, data)
