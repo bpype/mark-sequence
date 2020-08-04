@@ -26,6 +26,40 @@ import os
 from tempfile import TemporaryDirectory
 import fileseq
 
+
+default_template = {
+    "fields": [
+        "shot_name", "frame_number", "normalized_frame_number", "total_images", "user", "hostname", "date", "copyright", "comment"
+        ],
+    "output_fields": [
+        {
+            "field": "Shot",
+            "direction": "NorthWest",
+            "string": '"%s   %s"'  # shot_name, frame_number
+        },
+        {
+            "field": "Frame",
+            "direction": "North",
+            "string": '"%04s  /  %s "'  # % normalized_frame_number, total_images
+        },
+        {
+            "field": "Date",
+            "direction": "SouthEast",
+            "string": '"LFS%10s %10 %s"'  # % user, hostname, date
+        },
+        {
+            "field": "Copyright",
+            "direction": "SouthWest",
+            "string": '"%s"'  # % copyright
+        },
+        {
+            "field": "Comment",
+            "direction": "South",
+            "string": '"%s"'  # % comment
+        },
+    ]
+}
+
 def mark_image(path, output_path, data):
     args = ['convert']
     args += ['"%s"' % path]
