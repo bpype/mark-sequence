@@ -62,15 +62,15 @@ default_template = {
 
 def mark_image(path, output_path, data):
     args = ['convert']
-    args += ['"%s"' % path]
+    args += ['%s' % path]
 
     # Add gray band overlay
-    args.extend(['-fill "rgba(0,0,0,0.3)"'])
-    args.extend(['-draw "rectangle 0,0 %s,%s"' % (
+    args.extend(['-fill', 'rgba(0,0,0,0.3)'])
+    args.extend(['-draw', 'rectangle 0,0 %s,%s' % (
         data['resolution_x'],
         data['font_size'])])
-    args.extend(['-fill "rgba(0,0,0,0.3)"'])
-    args.extend(['-draw "rectangle 0,%s %s,%s"' % (
+    args.extend(['-fill', 'rgba(0,0,0,0.3)'])
+    args.extend(['-draw', ' rectangle 0,%s %s,%s' % (
         data['resolution_y'] - data['font_size'] - 2,
         data['resolution_x'],
         data['resolution_y'])])
@@ -79,31 +79,31 @@ def mark_image(path, output_path, data):
     args.extend(['-fill', 'white', '-pointsize', str(data['font_size'])])
 
     # Shot name / Frame number
-    args.extend(['-gravity', 'NorthWest', '-annotate', "0", '"%s   %s"' % (data['shot'], data['frame_number'])])
+    args.extend(['-gravity', 'NorthWest', '-annotate', '0', '%s   %s' % (data['shot'], data['frame_number'])])
     # Normalized current frame
     args.extend(['-gravity',
                  'North',
                  '-annotate',
-                 "0",
-                 '"%04s  /  %s "' % (str(data['normalized_frame_number']), data["total_images"])])
+                 '0',
+                 '%04s  /  %s ' % (str(data['normalized_frame_number']), data["total_images"])])
     # Resolution and lens information
     args.extend(['-gravity',
                  'NorthEast',
                  '-annotate',
                  '0',
-                 '"%s    %ix%i"' % (data["source"], data['resolution_x'], data['resolution_y'])])
+                 '%s    %ix%i' % (data['source'], data['resolution_x'], data['resolution_y'])])
     # Date
     args.extend(['-gravity',
                  'SouthEast',
                  '-annotate',
                  '0',
-                 '"%10s %10s %s"' % (data['user'], data['hostname'], data['date'])])
+                 '%10s %10s %s' % (data['user'], data['hostname'], data['date'])])
     # Copyright
     args.extend(['-gravity',
                  'SouthWest',
                  '-annotate',
                  '0',
-                 '"%s"' % (data['copyright'])])
+                 '%s' % (data['copyright'])])
 
     # Comment
     if data['comment']:
@@ -111,16 +111,15 @@ def mark_image(path, output_path, data):
                      'South',
                      '-annotate',
                      '0',
-                     '"%s"' % data['comment']])
+                     '%s' % data['comment']])
 
     # Debug alpha channel
     args.extend(['-alpha', 'remove'])
     args.extend(['-compress', 'Piz'])  # TODO : remettre DWAA quand ffmpeg le permettra
 
     # Output
-    args.append('"%s"' % output_path)  # Output path
-    j = " ".join(args)
-    proc = subprocess.check_output(j, shell=True)
+    args.append('%s' % output_path)  # Output path
+    proc = subprocess.run(args, check=True)
 
 
 if __name__ == "__main__":
@@ -151,8 +150,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mark_dir:
-        os.makedirs(args.mark_dir, exist_ok=True)
         mark_dir = args.mark_dir
+        os.makedirs(mark_dir, exist_ok=True)
     else:
         mark_dir = TemporaryDirectory().name
 
