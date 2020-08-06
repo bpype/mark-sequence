@@ -23,64 +23,56 @@ import subprocess
 import json
 import argparse
 import fileseq
-import getpass
-import datetime
 from tempfile import mkdtemp
 from math import inf
 import textwrap
 
 default_template = {
-    # "settings": {
-    #     ...
-    # },
+    "settings": {
+        "font_size": 16,
+        "color": "chartreuse"
+    },
     "fields": [
-        {
-            "field": "shot_name",
-            "direction": "NorthWest",
-            "string": '%s  '
-        },
         {
             "field": "frame_number",
             "direction": "NorthWest",
-            "string": '%s'
+            "string": "%s"
         },
         {
             "field": "normalized_frame_number",
             "direction": "North",
-            "string": '%04s / '
+            "string": "%04s / "
         },
         {
             "field": "total_images",
             "direction": "North",
-            "string": '%s'
+            "string": "%s"
         },
         {
             "field": "user",
             "direction": "SouthEast",
-            "string": '%10s '
+            "string": "%10s "
         },
         {
             "field": "hostname",
             "direction": "SouthEast",
-            "string": '%10s '
+            "string": "%10s "
         },
         {
             "field": "date",
-            "direction": "SouthEast",
-            "string": '%s'
-        },
+            "direction": "NorthEast",
+            "string": "%s"
+        }
+    ],
+    "images": [
         {
-            "field": "copyright",
+            "field": "circle",
             "direction": "SouthWest",
-            "string": '%s'
-        },
-        {
-            "field": "comment",
-            "direction": "South",
-            "string": '%s'
-        },
+            "geometry": "10x10+20+4"
+        }
     ]
 }
+
 
 def mark_image(path, output_path, data):
     args = ['convert']
