@@ -18,7 +18,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-import sys, os
+import os
 import subprocess
 import json
 import argparse
@@ -27,7 +27,7 @@ import getpass
 import datetime
 from tempfile import mkdtemp
 from math import inf
-
+import textwrap
 
 default_template = {
     # "settings": {
@@ -127,26 +127,52 @@ def mark_image(path, output_path, data):
     args.extend(['-compress', 'Piz'])  # TODO : remettre DWAA quand ffmpeg le permettra
 
     # Output
-    args.append('%s' % output_path)  # Output path
+    args.append('%s' % output_path)
     proc = subprocess.run(args, check=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Make an annotated movie output from a list of images')
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.indent(
+            textwrap.dedent('''\
 
-    parser.add_argument('--template', type=str,
-                        help='template file for marking the sequence')
+            Make an annotated movie output from a list of images. A JSON
+            template may be specified, which will contain fields such as:
 
-    parser.add_argument('sequence', type=str,
-                        help='file sequence, typically a frame in the sequence')
-    parser.add_argument('--mark-dir', type=str,
+            {
+                "field": "shot_name",
+                "direction": "NorthWest",
+                "string": '%s  '
+            },
+
+            You can then specify the option --shot-name on the command line,
+            and the text will appear in the top left.
+
+            The direction uses ImageMagick’s convention: North, NorthEast,
+            East, SouthEast, South, SouthWest, West, NorthWest. If a direction
+            is specified multiple times, the corresponding fields will be
+            concatenated.
+
+            '''
+            ), '  '
+        )
+    )
+
+    group = parser.add_argument_group('file options')
+    group.add_argument('-t', '--template', type=str,
+                        help='template file containing field descriptions')
+
+    group.add_argument('sequence', type=str,
+                        help='input image sequence, typically a frame in the sequence')
+    group.add_argument('-d', '--mark-dir', type=str,
                         help='intermediate directory, leave blank for tmp dir')
 
-    parser.add_argument('--offset', type=int, default=0,
+    group = parser.add_argument_group('frame options')
+    group.add_argument('-o', '--offset', type=int, default=0,
                         help='offset for renaming frames')
-    parser.add_argument('--start-frame', type=int, default=-inf,
+    group.add_argument('-s', '--start-frame', type=int, default=-inf,
                         help="don't mark images lower than this number")
-    parser.add_argument('--end-frame', type=int, default=inf,
+    group.add_argument('-e', '--end-frame', type=int, default=inf,
                         help="don't mark images higher than this number")
 
     args = parser.parse_known_args()[0]
