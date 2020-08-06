@@ -26,6 +26,7 @@ import fileseq
 import getpass
 import datetime
 from tempfile import mkdtemp
+from math import inf
 
 
 default_template = {
@@ -143,6 +144,10 @@ if __name__ == "__main__":
 
     parser.add_argument('--offset', type=int, default=0,
                         help='offset for renaming frames')
+    parser.add_argument('--start-frame', type=int, default=-inf,
+                        help="don't mark images lower than this number")
+    parser.add_argument('--end-frame', type=int, default=inf,
+                        help="don't mark images higher than this number")
 
     args = parser.parse_known_args()[0]
 
@@ -193,8 +198,10 @@ if __name__ == "__main__":
         if field['field'] == 'total_images' and not args.total_images:
             data['total_images'] = len(frame_set)
 
-    # for i in range(args.start_frame, args.end_frame + 1):
     for i, image_number in enumerate(file_sequence.frameSet()):
+        if (image_number < args.start_frame
+            or image_number > args.end_frame):
+            continue
         image_source = file_sequence.frame(image_number)
         image_marked = os.path.join(mark_dir, "marked.%04i.exr" % (i - args.offset + 1))
         print("Processing %s" % image_source)
