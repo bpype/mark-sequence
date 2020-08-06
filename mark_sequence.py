@@ -78,18 +78,20 @@ def mark_image(path, output_path, data):
     args = ['convert']
     args += ['%s' % path]
 
+    settings = data['template']['settings']
+
     # Add gray band overlay
     args.extend(['-fill', 'rgba(0,0,0,0.3)'])
     args.extend(['-draw', 'rectangle 0,0 %s,%s' % (data['resolution_x'],
-                                                   data['font_size'])])
+                                                   settings['font_size'])])
     args.extend(['-fill', 'rgba(0,0,0,0.3)'])
     args.extend(['-draw', 'rectangle 0,%s %s,%s' % (data['resolution_y'] -
-                                                    data['font_size'] - 2,
+                                                    settings['font_size'] - 2,
                                                     data['resolution_x'],
                                                     data['resolution_y'])])
 
     # Setting text color and size
-    args.extend(['-fill', 'white', '-pointsize', str(data['font_size'])])
+    args.extend(['-fill', settings['color'], '-pointsize', str(settings['font_size'])])
 
     directions = {}
 
@@ -115,9 +117,14 @@ def mark_image(path, output_path, data):
 
         # Add image annotations
     for image in data['template']['images']:
+        args.append('(')
+
+        # File path, either from template or from command line
+        if image['field'] and data[image['field']]:
+            args.append(os.path.abspath(data[image['field']]))
+        else:
+            args.append(image['path'])
         args.extend([
-            '(',
-            os.path.abspath(data[image['field']]),
             '-gravity', image['direction'],
             '-geometry', image['geometry'],
             ')',
@@ -155,6 +162,8 @@ def get_sequence_path(sequence):
 
 
 if __name__ == "__main__":
+    data = {}
+
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.indent(
@@ -227,17 +236,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Special fields: for each special field, give a default if it is
-    # specified in the template but not overriden on command line
-    for field in template['fields']:
-        if field['field'] == 'date' and not args.date:
-            args.date = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
-        if field['field'] == 'user' and not args.user:
-            args.user = getpass.getuser()
-        if field['field'] == 'hostname' and not args.hostname:
-            import platform
-            args.hostname = platform.node()
-
     # Create temporary directory for images
     if args.mark_dir:
         mark_dir = args.mark_dir
@@ -245,17 +243,30 @@ if __name__ == "__main__":
     else:
         mark_dir = mkdtemp()
 
-    data = {'font_size': 16, }
     data.update(vars(args))
     data['template'] = template
-
-    resolution_x = None
-    resolution_y = None
 
     file_sequence = fileseq.findSequenceOnDisk(os.path.abspath(args.sequence))
     frame_set = file_sequence.frameSet()
 
+    # Get first image resolution
+    res = subprocess.check_output(['identify', '-format', '%wx%h', file_sequence.frame(2)])
+    res_x, res_y = res.decode('ascii').split("x")
+    data['resolution_x'] = int(res_x)
+    data['resolution_y'] = int(res_y)
+
+    # Special fields: for each special field, give a default if it is
+    # specified in the template but not overriden on command line
     for field in template['fields']:
+        if field['field'] == 'date' and not args.date:
+            import datetime
+            data['date'] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
+        if field['field'] == 'user' and not args.user:
+            import getpass
+            data['user'] = getpass.getuser()
+        if field['field'] == 'hostname' and not args.hostname:
+            import platform
+            data['hostname'] = platform.node()
         if field['field'] == 'total_images' and not args.total_images:
             data['total_images'] = len(frame_set)
 
@@ -266,14 +277,6 @@ if __name__ == "__main__":
         image_source = file_sequence.frame(image_number)
         image_marked = os.path.join(mark_dir, "marked.%04i.png" % (i - args.offset + 1))
         print("Processing %s" % image_source)
-        res = subprocess.check_output(['identify', '-format', '%wx%h', image_source])
-        res_x, res_y = res.decode('ascii').split("x")
-        if resolution_x is None:
-            resolution_x = res_x
-            data['resolution_x'] = int(res_x)
-        if resolution_y is None:
-            resolution_y = res_y
-            data['resolution_y'] = int(res_y)
 
         # Special fields: for each special field, give a default if it is
         # specified in the template but not overriden on command line
