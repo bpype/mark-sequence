@@ -88,14 +88,13 @@ def mark_image(path, output_path, data):
 
     # Add gray band overlay
     args.extend(['-fill', 'rgba(0,0,0,0.3)'])
-    args.extend(['-draw', 'rectangle 0,0 %s,%s' % (
-        data['resolution_x'],
-        data['font_size'])])
+    args.extend(['-draw', 'rectangle 0,0 %s,%s' % (data['resolution_x'],
+                                                   data['font_size'])])
     args.extend(['-fill', 'rgba(0,0,0,0.3)'])
-    args.extend(['-draw', 'rectangle 0,%s %s,%s' % (
-        data['resolution_y'] - data['font_size'] - 2,
-        data['resolution_x'],
-        data['resolution_y'])])
+    args.extend(['-draw', 'rectangle 0,%s %s,%s' % (data['resolution_y'] -
+                                                    data['font_size'] - 2,
+                                                    data['resolution_x'],
+                                                    data['resolution_y'])])
 
     # Setting text color and size
     args.extend(['-fill', 'white', '-pointsize', str(data['font_size'])])
@@ -121,6 +120,16 @@ def mark_image(path, output_path, data):
         args.extend(['-gravity', direction,
                      '-annotate', '0',
                      value])
+
+        # Add image annotations
+    for image in data['template']['images']:
+        args.extend([
+            '(',
+            os.path.abspath(data[image['field']]),
+            '-gravity', image['direction'],
+            '-geometry', image['geometry'],
+            ')',
+            '-composite'])
 
     # Debug alpha channel
     args.extend(['-alpha', 'remove'])
@@ -171,10 +180,10 @@ if __name__ == "__main__":
             You can then specify the option --shot-name on the command line,
             and the text will appear in the top left.
 
-            The direction uses ImageMagick’s convention: North, NorthEast,
-            East, SouthEast, South, SouthWest, West, NorthWest. If a direction
-            is specified multiple times, the corresponding fields will be
-            concatenated.
+            The direction uses ImageMagick’s convention: Center, North,
+            NorthEast, East, SouthEast, South, SouthWest, West, NorthWest. If a
+            direction is specified multiple times, the corresponding fields
+            will be concatenated.
 
             '''
             ), '  '
@@ -212,10 +221,17 @@ if __name__ == "__main__":
         with open(os.path.abspath(args.template), 'r') as f:
             template = json.load(f)
 
-    group = parser.add_argument_group('Template field arguments')
+    # Add text fields
+    group = parser.add_argument_group('Template text field arguments')
     for field in template['fields']:
         field = field['field'].replace('_', '-')
         group.add_argument('--' + field, type=str, default='')
+
+    # Add image fields
+    group = parser.add_argument_group('Template image field arguments')
+    for image in template['images']:
+        image = image['field'].replace('_', '-')
+        group.add_argument('--' + image, type=str, default='')
 
     args = parser.parse_args()
 
@@ -256,7 +272,7 @@ if __name__ == "__main__":
             or image_number > args.end_frame):
             continue
         image_source = file_sequence.frame(image_number)
-        image_marked = os.path.join(mark_dir, "marked.%04i.exr" % (i - args.offset + 1))
+        image_marked = os.path.join(mark_dir, "marked.%04i.png" % (i - args.offset + 1))
         print("Processing %s" % image_source)
         res = subprocess.check_output(['identify', '-format', '%wx%h', image_source])
         res_x, res_y = res.decode('ascii').split("x")
