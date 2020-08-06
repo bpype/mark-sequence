@@ -24,7 +24,7 @@ import datetime
 import argparse
 import os
 import json
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 import fileseq
 
 
@@ -175,12 +175,11 @@ if __name__ == "__main__":
             args.hostname = platform.node()
 
     # Create temporary directory for images
-    # TODO fix temp dir
     if args.mark_dir:
         mark_dir = args.mark_dir
         os.makedirs(mark_dir, exist_ok=True)
     else:
-        mark_dir = TemporaryDirectory().name
+        mark_dir = mkdtemp()
 
     data = {'font_size': 16, }
     data.update(vars(args))
@@ -218,3 +217,8 @@ if __name__ == "__main__":
             if field['field'] == 'normalized_frame_number' and not args.normalized_frame_number:
                 data['normalized_frame_number'] = i - args.offset + 1
         mark_image(image_source, image_marked, data)
+
+    # Cleanup temp dirs
+    if not args.mark_dir:
+        from shutil import rmtree
+        rmtree(mark_dir)
