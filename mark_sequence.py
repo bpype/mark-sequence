@@ -130,6 +130,29 @@ def mark_image(path, output_path, data):
     args.append('%s' % output_path)
     proc = subprocess.run(args, check=True)
 
+
+def render_video(img_sources, destination, audio_file=None, frame_rate=25):
+    args = ['ffmpeg', '-y']
+    args.extend(['-r', str(frame_rate)])
+    args.extend(['-i', img_sources])
+
+    if audio_file is not None:
+        args.extend(['-i', 'audio_file'])
+        args.extend(['-c:a', 'copy'])
+
+    args.extend(['-c:v', 'mjpeg', '-q:v', '3'])
+
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    args.extend(['%s' % (destination)])
+
+    proc = subprocess.run(args)
+
+
+def get_sequence_path(sequence):
+    padding = file_sequence.getPaddingNum(file_sequence.padding())
+    return file_sequence.format('{dirname}{basename}%0' + str(padding) + 'd{extension}')
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -166,6 +189,10 @@ if __name__ == "__main__":
                         help='input image sequence, typically a frame in the sequence')
     group.add_argument('-d', '--mark-dir', type=str,
                         help='intermediate directory, leave blank for tmp dir')
+    group.add_argument('-v', '--video-output', type=str,
+                        help='render video to this destination')
+    group.add_argument('-a', '--audio-file', type=str,
+                        help='if rendering video, use this file as audio track')
 
     group = parser.add_argument_group('frame options')
     group.add_argument('-o', '--offset', type=int, default=0,
@@ -249,7 +276,9 @@ if __name__ == "__main__":
                 data['normalized_frame_number'] = i - args.offset + 1
         mark_image(image_source, image_marked, data)
 
-    # Cleanup temp dirs
+    if args.video_output:
+        render_video(get_sequence_path(file_sequence), os.path.abspath(args.video_output))
+
     if not args.mark_dir:
         from shutil import rmtree
         rmtree(mark_dir)
