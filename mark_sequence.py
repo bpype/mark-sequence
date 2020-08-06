@@ -28,34 +28,54 @@ import fileseq
 
 
 default_template = {
-    "fields": [
-        "shot_name", "frame_number", "normalized_frame_number", "total_images", "user", "hostname", "date", "copyright", "comment"
-        ],
+    # "settings": {
+    #     ...
+    # },
     "output_fields": [
         {
-            "field": "Shot",
+            "field": "shot_name",
             "direction": "NorthWest",
-            "string": '"%s   %s"'  # shot_name, frame_number
+            "string": '%s  '
         },
         {
-            "field": "Frame",
+            "field": "frame_number",
+            "direction": "NorthWest",
+            "string": '%s'
+        },
+        {
+            "field": "normalized_frame_number",
             "direction": "North",
-            "string": '"%04s  /  %s "'  # % normalized_frame_number, total_images
+            "string": '%04s / '
         },
         {
-            "field": "Date",
+            "field": "total_images",
+            "direction": "North",
+            "string": '%s'
+        },
+        {
+            "field": "user",
             "direction": "SouthEast",
-            "string": '"LFS%10s %10 %s"'  # % user, hostname, date
+            "string": '%10s '
         },
         {
-            "field": "Copyright",
+            "field": "hostname",
+            "direction": "SouthEast",
+            "string": '%10s '
+        },
+        {
+            "field": "date",
+            "direction": "SouthEast",
+            "string": '%s'
+        },
+        {
+            "field": "copyright",
             "direction": "SouthWest",
-            "string": '"%s"'  # % copyright
+            "string": '%s'
         },
         {
-            "field": "Comment",
+            "field": "comment",
             "direction": "South",
-            "string": '"%s"'  # % comment
+            "string": '%s'
         },
     ]
 }
@@ -70,7 +90,7 @@ def mark_image(path, output_path, data):
         data['resolution_x'],
         data['font_size'])])
     args.extend(['-fill', 'rgba(0,0,0,0.3)'])
-    args.extend(['-draw', ' rectangle 0,%s %s,%s' % (
+    args.extend(['-draw', 'rectangle 0,%s %s,%s' % (
         data['resolution_y'] - data['font_size'] - 2,
         data['resolution_x'],
         data['resolution_y'])])
@@ -78,40 +98,22 @@ def mark_image(path, output_path, data):
     # Setting text color and size
     args.extend(['-fill', 'white', '-pointsize', str(data['font_size'])])
 
-    # Shot name / Frame number
-    args.extend(['-gravity', 'NorthWest', '-annotate', '0', '%s   %s' % (data['shot'], data['frame_number'])])
-    # Normalized current frame
-    args.extend(['-gravity',
-                 'North',
-                 '-annotate',
-                 '0',
-                 '%04s  /  %s ' % (str(data['normalized_frame_number']), data["total_images"])])
-    # Resolution and lens information
-    args.extend(['-gravity',
-                 'NorthEast',
-                 '-annotate',
-                 '0',
-                 '%s    %ix%i' % (data['source'], data['resolution_x'], data['resolution_y'])])
-    # Date
-    args.extend(['-gravity',
-                 'SouthEast',
-                 '-annotate',
-                 '0',
-                 '%10s %10s %s' % (data['user'], data['hostname'], data['date'])])
-    # Copyright
-    args.extend(['-gravity',
-                 'SouthWest',
-                 '-annotate',
-                 '0',
-                 '%s' % (data['copyright'])])
+    directions = {}
 
-    # Comment
-    if data['comment']:
-        args.extend(['-gravity',
-                     'South',
-                     '-annotate',
-                     '0',
-                     '%s' % data['comment']])
+    # Add annotations for each field to the list of directions
+    # This has the effect of concatenating various fields for a given direction
+    for field in data['template']['output_fields']:
+        direction = field['direction']
+        value = field['string'] % data[field['field']]
+        if not direction in directions:
+            directions[direction] = ''
+        directions[direction] += (value)
+
+    # Add annotations for each field
+    for direction, value in directions.items():
+        args.extend(['-gravity', direction,
+                     '-annotate', '0',
+                     value])
 
     # Debug alpha channel
     args.extend(['-alpha', 'remove'])
@@ -129,6 +131,9 @@ if __name__ == "__main__":
                         help='file sequence, typically a frame in the sequence')
     parser.add_argument('--mark-dir', type=str,
                         help='intermediate directory, leave blank for tmp dir')
+
+    parser.add_argument('--template', type=str,
+                        help='template file for marking the sequence')
 
     parser.add_argument('--offset', type=int, default=0,
                         help='offset for renaming frames')
@@ -165,6 +170,13 @@ if __name__ == "__main__":
     frame_set = file_sequence.frameSet()
 
     data['total_images'] = len(frame_set)
+
+    # Load in template from supplied file. If none given, use default one.
+    if args.template is None:
+        data['template'] = default_template
+    else:
+        with open(args.template, 'r') as f:
+            data['template'] = json.load(f)
 
     # for i in range(args.start_frame, args.end_frame + 1):
     for i, image_number in enumerate(file_sequence.frameSet()):
