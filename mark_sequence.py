@@ -18,14 +18,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+import sys, os
 import subprocess
+import json
+import argparse
+import fileseq
 import getpass
 import datetime
-import argparse
-import os
-import json
 from tempfile import mkdtemp
-import fileseq
 
 
 default_template = {
@@ -129,26 +129,22 @@ def mark_image(path, output_path, data):
     args.append('%s' % output_path)  # Output path
     proc = subprocess.run(args, check=True)
 
-# TODO find better way to parse args multiple times
-class NonExitingArgumentParser(argparse.ArgumentParser):
-    def exit(self, status=0, message=None):
-        pass
-
 if __name__ == "__main__":
-    parser = NonExitingArgumentParser(
+    parser = argparse.ArgumentParser(
         description='Make an annotated movie output from a list of images')
+
+    parser.add_argument('--template', type=str,
+                        help='template file for marking the sequence')
+
     parser.add_argument('sequence', type=str,
                         help='file sequence, typically a frame in the sequence')
     parser.add_argument('--mark-dir', type=str,
                         help='intermediate directory, leave blank for tmp dir')
 
-    parser.add_argument('--template', type=str,
-                        help='template file for marking the sequence')
-
     parser.add_argument('--offset', type=int, default=0,
                         help='offset for renaming frames')
 
-    args = parser.parse_args()
+    args = parser.parse_known_args()[0]
 
     # Load in template from supplied file. If none given, use default one.
     if args.template is None:
@@ -158,8 +154,10 @@ if __name__ == "__main__":
         with open(os.path.abspath(args.template), 'r') as f:
             template = json.load(f)
 
+    group = parser.add_argument_group('Template field arguments')
     for field in template['fields']:
-        parser.add_argument('--' + field['field'], type=str, default='')
+        field = field['field'].replace('_', '-')
+        group.add_argument('--' + field, type=str, default='')
 
     args = parser.parse_args()
 
