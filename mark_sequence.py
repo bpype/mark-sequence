@@ -30,7 +30,8 @@ import textwrap
 default_template = {
     "settings": {
         "font_size": 16,
-        "color": "chartreuse"
+        "color": "white"
+        # "color": "chartreuse"
     },
     "fields": [
         {
@@ -65,11 +66,11 @@ default_template = {
         }
     ],
     "images": [
-        {
-            "field": "circle",
-            "direction": "SouthWest",
-            "geometry": "10x10+20+4"
-        }
+        # {
+        #     "field": "circle",
+        #     "direction": "SouthWest",
+        #     "geometry": "10x10+20+4"
+        # }
     ]
 }
 
@@ -157,8 +158,8 @@ def render_video(img_sources, destination, audio_file=None, frame_rate=25):
 
 
 def get_sequence_path(sequence):
-    padding = file_sequence.getPaddingNum(file_sequence.padding())
-    return file_sequence.format('{dirname}{basename}%0' + str(padding) + 'd{extension}')
+    padding = sequence.getPaddingNum(sequence.padding())
+    return sequence.format('{dirname}{basename}%0' + str(padding) + 'd{extension}')
 
 
 if __name__ == "__main__":
@@ -216,7 +217,6 @@ if __name__ == "__main__":
 
     # Load in template from supplied file. If none given, use default one.
     if args.template is None:
-        print(None)
         template = default_template
     else:
         with open(os.path.abspath(args.template), 'r') as f:
@@ -250,7 +250,7 @@ if __name__ == "__main__":
     frame_set = file_sequence.frameSet()
 
     # Get first image resolution
-    res = subprocess.check_output(['identify', '-format', '%wx%h', file_sequence.frame(2)])
+    res = subprocess.check_output(['identify', '-format', '%wx%h', file_sequence.frame(file_sequence.frameSet()[0])])
     res_x, res_y = res.decode('ascii').split("x")
     data['resolution_x'] = int(res_x)
     data['resolution_y'] = int(res_y)
@@ -287,8 +287,9 @@ if __name__ == "__main__":
                 data['normalized_frame_number'] = i - args.offset + 1
         mark_image(image_source, image_marked, data)
 
+    marked_sequence = fileseq.findSequenceOnDisk(image_marked)
     if args.video_output:
-        render_video(get_sequence_path(file_sequence), os.path.abspath(args.video_output))
+        render_video(get_sequence_path(marked_sequence), os.path.abspath(args.video_output))
 
     if not args.mark_dir:
         from shutil import rmtree
