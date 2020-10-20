@@ -79,9 +79,49 @@ default_template = {
 }
 
 class SequenceMarker():
-    def __init__(self, template=default_template):
+    def __init__(self, image_filepath, data, template=default_template):
         self.data = {}
         self.template = template
+        self.create_temp_dir()
+
+        self.file_sequence = fileseq.findSequenceOnDisk(image_filepath)
+        self.frame_set = self.file_sequence.frameSet()
+
+
+    def create_temp_dir(self):
+        """Create temporary directory for images"""
+        if 'mark_dir' in self.data and self.data['mark_dir']:
+            self.mark_dir = self.data['mark_dir']
+            os.makedirs(self.mark_dir, exist_ok=True)
+        else:
+            self.mark_dir = mkdtemp()
+
+    def delete_temp_dir(self):
+        """Delete temporary directory"""
+        if not 'mark_dir' in self.data or not self.data['mark_dir']:
+            from shutil import rmtree
+            rmtree(self.mark_dir)
+
+    def mark_images(self):
+        """Batch mark images"""
+        for i, image_number in enumerate(self.frame_set):
+            if (image_number < args.start_frame
+                or image_number > args.end_frame):
+                continue
+            image_source = self.file_sequence.frame(image_number)
+            image_marked = os.path.join(sequence_marker.mark_dir,
+                                        "marked.%04i.png" % (i - args.offset + 1))
+            print("Processing %s" % image_source)
+
+            # Special fields: for each special field, give a default if it is
+            # specified in the template but not overriden on command line
+            for field in template['fields']:
+                if field['field'] == 'frame_number' and not args.frame_number:
+                    self.data['frame_number'] = image_number
+                if field['field'] == 'normalized_frame_number' and not args.normalized_frame_number:
+                    self.data['normalized_frame_number'] = i - args.offset + 1
+            self.mark_image(image_source, image_marked)
+        return image_marked
 
     def mark_image(self, path, output_path):
         '''Use ImageMagick's convert command line utility to overlay metadata on
@@ -149,20 +189,6 @@ class SequenceMarker():
         convert_args.append('%s' % output_path)
         proc = subprocess.run(convert_args, check=True)
 
-    def create_temp_dir(self):
-        """Create temporary directory for images"""
-        if 'mark_dir' in self.data and self.data['mark_dir']:
-            self.mark_dir = self.data['mark_dir']
-            os.makedirs(self.mark_dir, exist_ok=True)
-        else:
-            self.mark_dir = mkdtemp()
-
-    def delete_temp_dir(self):
-        """Delete temporary directory"""
-        if not self.data['mark_dir']:
-            from shutil import rmtree
-            rmtree(self.mark_dir)
-
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
         args = ['ffmpeg', '-y']
         args.extend(['-r', str(frame_rate)])
@@ -179,7 +205,6 @@ class SequenceMarker():
 
         proc = subprocess.run(args)
 
-
     @staticmethod
     def get_sequence_path(sequence):
         padding = sequence.getPaddingNum(sequence.padding())
@@ -187,6 +212,7 @@ class SequenceMarker():
 
 
 if __name__ == "__main__":
+    # Parse command line arguments
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.indent(
@@ -237,20 +263,20 @@ if __name__ == "__main__":
 
     args = parser.parse_known_args()[0]
 
-    # Load in template from supplied file. If none given, use default one.
+    # Load in template from supplied json file. If none given, use default one.
     if args.template is None:
         template = default_template
     else:
         with open(os.path.abspath(args.template), 'r') as f:
             template = json.load(f)
 
-    # Add text fields
+    # Add text fields to argument parser
     group = parser.add_argument_group('Template text field arguments')
     for field in template['fields']:
         field = field['field'].replace('_', '-')
         group.add_argument('--' + field, type=str, default='')
 
-    # Add image fields
+    # Add image fields to argument parser
     group = parser.add_argument_group('Template image field arguments')
     for image in template['images']:
         image = image['field'].replace('_', '-')
@@ -258,18 +284,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    sequence_marker = SequenceMarker(template=template)
+    sequence_marker = SequenceMarker(os.path.abspath(args.sequence), vars(args), template=template)
 
-    sequence_marker.create_temp_dir()
-
-    sequence_marker.data.update(vars(args))
-    sequence_marker.data['template'] = template
-
-    file_sequence = fileseq.findSequenceOnDisk(os.path.abspath(args.sequence))
-    frame_set = file_sequence.frameSet()
+    # sequence_marker.data.update(vars(args))
+    # sequence_marker.create_temp_dir()
 
     # Get first image resolution
-    res = subprocess.check_output(['identify', '-format', '%wx%h', file_sequence.frame(file_sequence.frameSet()[0])])
+    res = subprocess.check_output(['identify', '-format', '%wx%h',
+                                   sequence_marker.file_sequence.frame(sequence_marker.frame_set[0])])
     res_x, res_y = res.decode('ascii').split("x")
     sequence_marker.data['resolution_x'] = int(res_x)
     sequence_marker.data['resolution_y'] = int(res_y)
@@ -287,29 +309,12 @@ if __name__ == "__main__":
             import platform
             sequence_marker.data['hostname'] = platform.node()
         if field['field'] == 'total_images' and not args.total_images:
-            sequence_marker.data['total_images'] = len(frame_set)
+            sequence_marker.data['total_images'] = len(sequence_marker.frame_set)
 
-    # Mark images
-    for i, image_number in enumerate(file_sequence.frameSet()):
-        if (image_number < args.start_frame
-            or image_number > args.end_frame):
-            continue
-        image_source = file_sequence.frame(image_number)
-        image_marked = os.path.join(sequence_marker.mark_dir,
-                                    "marked.%04i.png" % (i - args.offset + 1))
-        print("Processing %s" % image_source)
-
-        # Special fields: for each special field, give a default if it is
-        # specified in the template but not overriden on command line
-        for field in template['fields']:
-            if field['field'] == 'frame_number' and not args.frame_number:
-                sequence_marker.data['frame_number'] = image_number
-            if field['field'] == 'normalized_frame_number' and not args.normalized_frame_number:
-                sequence_marker.data['normalized_frame_number'] = i - args.offset + 1
-        sequence_marker.mark_image(image_source, image_marked)
+    last_image_marked = sequence_marker.mark_images()
 
     # Render video
-    marked_sequence = fileseq.findSequenceOnDisk(image_marked)
+    marked_sequence = fileseq.findSequenceOnDisk(last_image_marked)
     if args.video_output:
         sequence_marker.render_video(sequence_marker.get_sequence_path(marked_sequence),
                                      os.path.abspath(args.video_output))
