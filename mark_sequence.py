@@ -79,8 +79,9 @@ default_template = {
 }
 
 class SequenceMarker():
-    def __init__(self):
+    def __init__(self, template=default_template):
         self.data = {}
+        self.template = template
 
     def mark_image(self, path, output_path):
         '''Use ImageMagick's convert command line utility to overlay metadata on
@@ -88,7 +89,7 @@ class SequenceMarker():
         convert_args = ['convert']
         convert_args += ['%s' % path]
 
-        settings = self.data['template']['settings']
+        settings = self.template['settings']
 
         # Add gray band overlay
         convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
@@ -107,7 +108,7 @@ class SequenceMarker():
 
         # Add annotations for each field to the list of directions
         # This has the effect of concatenating various fields for a given direction
-        for field in self.data['template']['fields']:
+        for field in self.template['fields']:
             direction = field['direction']
             value = field['string']
             # Try formatting the string with the value from the command line
@@ -125,8 +126,8 @@ class SequenceMarker():
                          '-annotate', '0',
                          value])
 
-            # Add image annotations
-        for image in self.data['template']['images']:
+        # Add image annotations
+        for image in self.template['images']:
             convert_args.append('(')
 
             # File path, either from template or from command line
@@ -186,8 +187,6 @@ class SequenceMarker():
 
 
 if __name__ == "__main__":
-    sequence_marker = SequenceMarker()
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.indent(
@@ -258,6 +257,8 @@ if __name__ == "__main__":
         group.add_argument('--' + image, type=str, default='')
 
     args = parser.parse_args()
+
+    sequence_marker = SequenceMarker(template=template)
 
     sequence_marker.create_temp_dir()
 
