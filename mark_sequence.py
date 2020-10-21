@@ -97,8 +97,8 @@ class SequenceMarker():
 
     def delete_temp_dir(self):
         """Delete temporary directory"""
-        if not 'mark_dir' in self.data or self.data['mark_dir'] is None:  # or not self.data['mark_dir']:
-            print("Deleting temp dir…")
+        if not ('mark_dir' in self.data and self.data['mark_dir']):
+            print("Deleting temp dir...")
             from shutil import rmtree
             rmtree(self.mark_dir)
 
@@ -121,7 +121,7 @@ class SequenceMarker():
             image_source = self.file_sequence.frame(image_number)
             image_marked = os.path.join(sequence_marker.mark_dir,
                                         "marked.%04i.png" % (i - self.data['offset'] + 1))
-            print("Processing %s" % image_source)
+            print("Marking image %s..." % image_source)
 
             # Special fields: for each special field, give a default if it is
             # specified in the template but not overriden on command line
@@ -203,7 +203,7 @@ class SequenceMarker():
         proc = subprocess.run(convert_args, check=True)
 
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
-        print("Generating video…")
+        print("Generating video...")
         ffmpeg_args = ['ffmpeg', '-y', '-loglevel', 'error']
         ffmpeg_args.extend(['-r', str(frame_rate)])
         ffmpeg_args.extend(['-i', img_sources])
@@ -299,9 +299,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sequence_marker = SequenceMarker(os.path.abspath(args.sequence), vars(args), template=template)
-
-    # sequence_marker.data.update(vars(args))
-    # sequence_marker.create_temp_dir()
 
     # Get resolution from first image
     res = subprocess.check_output(['identify', '-format', '%wx%h',
