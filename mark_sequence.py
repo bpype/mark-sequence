@@ -69,7 +69,7 @@ default_template = {
             "string": "%s"
         }
     ],
-    "images": [
+    "image_fields": [
         # {
         #     "field": "circle",
         #     "direction": "SouthWest",
@@ -107,36 +107,54 @@ class SequenceMarker():
 
         marked_sequence = fileseq.findSequenceOnDisk(last_image_marked)
         if self.data['video_output']:
-            self.render_video(sequence_marker.get_sequence_path(marked_sequence),
+            self.render_video(self.get_sequence_path(marked_sequence),
                               os.path.abspath(self.data['video_output']))
 
         self.delete_temp_dir()
 
     def mark_images(self):
         """Batch mark images"""
+        image_data = self.data.copy()
+
+        # Special fields: for each special field, give a default if it is
+        # specified in the template but not passed as data
+        for field in self.template['fields']:
+            if field['field'] == 'date' and not 'date' in self.data:
+                import datetime
+                image_data['date'] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
+            if field['field'] == 'user' and not 'user' in self.data:
+                import getpass
+                image_data['user'] = getpass.getuser()
+            if field['field'] == 'hostname' and not 'hostname' in self.data:
+                import platform
+                image_data['hostname'] = platform.node()
+            if field['field'] == 'total_images' and not 'total_images' in self.data :
+                image_data['total_images'] = len(self.frame_set)
+
         for i, image_number in enumerate(self.frame_set):
             if (image_number < self.data['start_frame']
                 or image_number > self.data['end_frame']):
                 continue
             image_source = self.file_sequence.frame(image_number)
-            image_marked = os.path.join(sequence_marker.mark_dir,
+            image_marked = os.path.join(self.mark_dir,
                                         "marked.%04i.png" % (i - self.data['offset'] + 1))
             print("Marking image %s..." % image_source)
 
             # Special fields: for each special field, give a default if it is
-            # specified in the template but not overriden on command line
-            for field in template['fields']:
-                if field['field'] == 'frame_number' and not self.data['frame_number']:
-                    self.data['frame_number'] = image_number
-                if field['field'] == 'normalized_frame_number' and not self.data['normalized_frame_number']:
-                    self.data['normalized_frame_number'] = i - self.data['offset'] + 1
+            # specified in the template but not passed as data. These are
+            # evaluated at each frame
+            for field in self.template['fields']:
+                if field['field'] == 'frame_number' and not 'frame_number' in self.data:
+                    image_data['frame_number'] = image_number
+                if field['field'] == 'normalized_frame_number' and not 'normalized_frame_number' in self.data:
+                    image_data['normalized_frame_number'] = i - self.data['offset'] + 1
 
-            self.mark_image(image_source, image_marked)
+            self.mark_image(image_source, image_marked, image_data)
 
         # Return last image path
         return image_marked
 
-    def mark_image(self, path, output_path):
+    def mark_image(self, path, output_path, image_data):
         '''Use ImageMagick's convert command line utility to overlay metadata on
         specified image'''
         convert_args = ['convert']
@@ -146,13 +164,13 @@ class SequenceMarker():
 
         # Add gray band overlay
         convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
-        convert_args.extend(['-draw', 'rectangle 0,0 %s,%s' % (self.data['resolution_x'],
+        convert_args.extend(['-draw', 'rectangle 0,0 %s,%s' % (image_data['resolution_x'],
                                                        settings['font_size'])])
         convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
-        convert_args.extend(['-draw', 'rectangle 0,%s %s,%s' % (self.data['resolution_y'] -
+        convert_args.extend(['-draw', 'rectangle 0,%s %s,%s' % (image_data['resolution_y'] -
                                                         settings['font_size'] - 2,
-                                                        self.data['resolution_x'],
-                                                        self.data['resolution_y'])])
+                                                        image_data['resolution_x'],
+                                                        image_data['resolution_y'])])
 
         # Setting text color and size
         convert_args.extend(['-fill', settings['color'], '-pointsize', str(settings['font_size'])])
@@ -166,7 +184,7 @@ class SequenceMarker():
             value = field['string']
             # Try formatting the string with the value from the command line
             try:
-                value %= self.data[field['field']]
+                value %= image_data[field['field']]
             except TypeError:
                 pass
             if not direction in directions:
@@ -180,12 +198,12 @@ class SequenceMarker():
                          value])
 
         # Add image annotations
-        for image in self.template['images']:
+        for image in self.template['image_fields']:
             convert_args.append('(')
 
             # File path, either from template or from command line
-            if image['field'] and self.data[image['field']]:
-                convert_args.append(os.path.abspath(self.data[image['field']]))
+            if image['field'] and image_data[image['field']]:
+                convert_args.append(os.path.abspath(image_data[image['field']]))
             else:
                 convert_args.append(image['path'])
             convert_args.extend([
@@ -292,7 +310,7 @@ if __name__ == "__main__":
 
     # Add image fields to argument parser
     group = parser.add_argument_group('Template image field arguments')
-    for image in template['images']:
+    for image in template['image_fields']:
         image = image['field'].replace('_', '-')
         group.add_argument('--' + image, type=str, default='')
 
@@ -306,20 +324,5 @@ if __name__ == "__main__":
     res_x, res_y = res.decode('ascii').split("x")
     sequence_marker.data['resolution_x'] = int(res_x)
     sequence_marker.data['resolution_y'] = int(res_y)
-
-    # Special fields: for each special field, give a default if it is
-    # specified in the template but not overriden on command line
-    for field in template['fields']:
-        if field['field'] == 'date' and not args.date:
-            import datetime
-            sequence_marker.data['date'] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
-        if field['field'] == 'user' and not args.user:
-            import getpass
-            sequence_marker.data['user'] = getpass.getuser()
-        if field['field'] == 'hostname' and not args.hostname:
-            import platform
-            sequence_marker.data['hostname'] = platform.node()
-        if field['field'] == 'total_images' and not args.total_images:
-            sequence_marker.data['total_images'] = len(sequence_marker.frame_set)
 
     sequence_marker.mark_sequence()
