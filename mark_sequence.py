@@ -249,13 +249,13 @@ if __name__ == "__main__":
                         help='input image sequence, typically a frame in the sequence')
     group.add_argument('-d', '--mark-dir', type=str,
                         help='intermediate directory, leave blank for tmp dir')
-    group.add_argument('-v', '--video-output', type=str,
+    group.add_argument('-o', '--video-output', type=str,
                         help='render video to this destination')
     group.add_argument('-a', '--audio-file', type=str,
                         help='if rendering video, use this file as audio track')
 
     group = parser.add_argument_group('frame options')
-    group.add_argument('-o', '--offset', type=int, default=0,
+    group.add_argument('-O', '--offset', type=int, default=0,
                         help='offset for renaming frames')
     group.add_argument('-s', '--start-frame', type=int, default=-inf,
                         help="don't mark images lower than this number")
