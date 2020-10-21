@@ -80,13 +80,12 @@ default_template = {
 
 class SequenceMarker():
     def __init__(self, image_filepath, data, template=default_template):
-        self.data = {}
+        self.data = data
         self.template = template
         self.create_temp_dir()
 
         self.file_sequence = fileseq.findSequenceOnDisk(image_filepath)
         self.frame_set = self.file_sequence.frameSet()
-
 
     def create_temp_dir(self):
         """Create temporary directory for images"""
@@ -98,29 +97,43 @@ class SequenceMarker():
 
     def delete_temp_dir(self):
         """Delete temporary directory"""
-        if not 'mark_dir' in self.data or not self.data['mark_dir']:
+        if not 'mark_dir' in self.data or self.data['mark_dir'] is None:  # or not self.data['mark_dir']:
+            print("Deleting temp dir…")
             from shutil import rmtree
             rmtree(self.mark_dir)
+
+    def mark_sequence(self):
+        last_image_marked = self.mark_images()
+
+        marked_sequence = fileseq.findSequenceOnDisk(last_image_marked)
+        if self.data['video_output']:
+            self.render_video(sequence_marker.get_sequence_path(marked_sequence),
+                              os.path.abspath(self.data['video_output']))
+
+        self.delete_temp_dir()
 
     def mark_images(self):
         """Batch mark images"""
         for i, image_number in enumerate(self.frame_set):
-            if (image_number < args.start_frame
-                or image_number > args.end_frame):
+            if (image_number < self.data['start_frame']
+                or image_number > self.data['end_frame']):
                 continue
             image_source = self.file_sequence.frame(image_number)
             image_marked = os.path.join(sequence_marker.mark_dir,
-                                        "marked.%04i.png" % (i - args.offset + 1))
+                                        "marked.%04i.png" % (i - self.data['offset'] + 1))
             print("Processing %s" % image_source)
 
             # Special fields: for each special field, give a default if it is
             # specified in the template but not overriden on command line
             for field in template['fields']:
-                if field['field'] == 'frame_number' and not args.frame_number:
+                if field['field'] == 'frame_number' and not self.data['frame_number']:
                     self.data['frame_number'] = image_number
-                if field['field'] == 'normalized_frame_number' and not args.normalized_frame_number:
-                    self.data['normalized_frame_number'] = i - args.offset + 1
+                if field['field'] == 'normalized_frame_number' and not self.data['normalized_frame_number']:
+                    self.data['normalized_frame_number'] = i - self.data['offset'] + 1
+
             self.mark_image(image_source, image_marked)
+
+        # Return last image path
         return image_marked
 
     def mark_image(self, path, output_path):
@@ -191,20 +204,20 @@ class SequenceMarker():
 
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
         print("Generating video…")
-        args = ['ffmpeg', '-y', '-loglevel', 'error']
-        args.extend(['-r', str(frame_rate)])
-        args.extend(['-i', img_sources])
+        ffmpeg_args = ['ffmpeg', '-y', '-loglevel', 'error']
+        ffmpeg_args.extend(['-r', str(frame_rate)])
+        ffmpeg_args.extend(['-i', img_sources])
 
         if audio_file is not None:
-            args.extend(['-i', 'audio_file'])
-            args.extend(['-c:a', 'copy'])
+            ffmpeg_args.extend(['-i', 'audio_file'])
+            ffmpeg_args.extend(['-c:a', 'copy'])
 
-        args.extend(['-c:v', 'mjpeg', '-q:v', '3'])
+        ffmpeg_args.extend(['-c:v', 'mjpeg', '-q:v', '3'])
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
-        args.extend(['%s' % (destination)])
+        ffmpeg_args.extend(['%s' % (destination)])
 
-        proc = subprocess.run(args)
+        proc = subprocess.run(ffmpeg_args)
 
     @staticmethod
     def get_sequence_path(sequence):
@@ -290,7 +303,7 @@ if __name__ == "__main__":
     # sequence_marker.data.update(vars(args))
     # sequence_marker.create_temp_dir()
 
-    # Get first image resolution
+    # Get resolution from first image
     res = subprocess.check_output(['identify', '-format', '%wx%h',
                                    sequence_marker.file_sequence.frame(sequence_marker.frame_set[0])])
     res_x, res_y = res.decode('ascii').split("x")
@@ -312,12 +325,4 @@ if __name__ == "__main__":
         if field['field'] == 'total_images' and not args.total_images:
             sequence_marker.data['total_images'] = len(sequence_marker.frame_set)
 
-    last_image_marked = sequence_marker.mark_images()
-
-    # Render video
-    marked_sequence = fileseq.findSequenceOnDisk(last_image_marked)
-    if args.video_output:
-        sequence_marker.render_video(sequence_marker.get_sequence_path(marked_sequence),
-                                     os.path.abspath(args.video_output))
-
-    sequence_marker.delete_temp_dir()
+    sequence_marker.mark_sequence()
