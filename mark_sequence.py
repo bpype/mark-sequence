@@ -190,7 +190,8 @@ class SequenceMarker():
         proc = subprocess.run(convert_args, check=True)
 
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
-        args = ['ffmpeg', '-y']
+        print("Generating video…")
+        args = ['ffmpeg', '-y', '-loglevel', 'error']
         args.extend(['-r', str(frame_rate)])
         args.extend(['-i', img_sources])
 
