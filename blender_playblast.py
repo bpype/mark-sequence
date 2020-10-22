@@ -84,9 +84,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             # Get data from environment variables
             # TODO automate list of vars to look up
-            for field in ("sequence", "scene", "studio"):
+            for field in ("sequence", "scene"):
                 if field in os.environ:
-                    data[field] = os.environ[field]
+                    data[field] = int(os.environ[field])
+            if "studio" in os.environ:
+                data["studio"] = os.environ["studio"]
 
             # Render animation from viewport
             if self.do_render:

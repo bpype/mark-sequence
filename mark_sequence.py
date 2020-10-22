@@ -60,12 +60,12 @@ default_template = {
         {
             "name": "sequence",
             "direction": "NorthWest",
-            "string": "sq%s "
+            "string": "sq%02i "
         },
         {
             "name": "scene",
             "direction": "NorthWest",
-            "string": "sc%s "
+            "string": "sc%04i "
         },
         {
             "name": "frame_number",
