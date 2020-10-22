@@ -19,16 +19,30 @@
 
 
 import os
+import platform
 import subprocess
 import json
 import argparse
 import fileseq
+import textwrap
 from tempfile import mkdtemp
 from math import inf
-import textwrap
 
 
 __all__ = ['default_template', 'SequenceMarker']
+
+# Paths of installed binaries, depending on environment
+# It would be better to let the OS handle the path, but for now let's not
+bins = {'Linux':
+        {'ffmpeg': 'ffmpeg',
+         'convert': 'convert'},
+        'Windows':
+        {'ffmpeg': '"C:\\bin\\ffmpeg\\ffmpeg.exe"',
+         'convert': '"C:\\Program Files\\ImageMagick-6.9.3-Q16\\convert.exe"'},
+        'Darwin':
+        {'ffmpeg': '/Applications/ffmpeg',
+         'convert': '/opt/ImageMagick/bin/convert'}
+}
 
 
 default_template = {
@@ -196,7 +210,8 @@ class SequenceMarker():
     def mark_image(self, path, output_path, image_data):
         '''Use ImageMagick's convert command line utility to overlay metadata on
         specified image'''
-        convert_args = ['convert']
+        convert_bin = bins[platform.system()]['convert']
+        convert_args = [convert_bin]
         convert_args += ['%s' % path]
 
         settings = self.template['settings']
@@ -259,7 +274,8 @@ class SequenceMarker():
 
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
         print("Generating video...")
-        ffmpeg_args = ['ffmpeg', '-y', '-loglevel', 'error']
+        ffmpeg_bin = bins[platform.system()]['ffmpeg']
+        ffmpeg_args = [ffmpeg_bin, '-y', '-loglevel', 'error']
         ffmpeg_args.extend(['-r', str(frame_rate)])
         ffmpeg_args.extend(['-i', img_sources])
 
