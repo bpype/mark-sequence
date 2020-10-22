@@ -46,12 +46,12 @@ default_template = {
         {
             "name": "sequence",
             "direction": "NorthWest",
-            "string": "%s "
+            "string": "sq%s "
         },
         {
-            "name": "shot",
+            "name": "scene",
             "direction": "NorthWest",
-            "string": "%s "
+            "string": "sc%s "
         },
         {
             "name": "frame_number",
@@ -61,7 +61,7 @@ default_template = {
         {
             "name": "normalized_frame_number",
             "direction": "North",
-            "string": "%04f / "
+            "string": "%04i / "
         },
         {
             "name": "total_images",
@@ -91,17 +91,17 @@ default_template = {
         {
             "name": "studio",
             "direction": "SouthEast",
-            "string": "%s "
+            "string": " %s "
         },
         {
             "name": "user",
             "direction": "SouthEast",
-            "string": "%s "
+            "string": " %s "
         },
         {
             "name": "hostname",
             "direction": "SouthEast",
-            "string": "%s "
+            "string": " %s "
         },
         {
             "name": "date",
@@ -291,13 +291,15 @@ if __name__ == "__main__":
             template may be specified, which will contain fields such as:
 
             {
-                "name": "shot",
+                "name": "scene",
                 "direction": "NorthWest",
-                "string": '%s  '
+                "string": ' sc%s '
             },
 
-            You can then specify the option --shot-name on the command line,
-            and the text will appear in the top left.
+            You can then specify the option --scene on the command line, and
+            the text will appear in the top left. Warning: underscores are
+            replaced by dashes, so "my_field" becomes "my-field", to respect
+            the customary option format.
 
             The direction uses ImageMagick’s convention: Center, North,
             NorthEast, East, SouthEast, South, SouthWest, West, NorthWest. If a

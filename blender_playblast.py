@@ -30,6 +30,7 @@ import bpy
 import os
 import tempfile
 from mark_sequence import SequenceMarker
+from time import time
 
 
 class LFS_OT_Playblast(bpy.types.Operator):
@@ -38,23 +39,32 @@ class LFS_OT_Playblast(bpy.types.Operator):
     bl_label = "Playblast"
     bl_options = {'REGISTER', 'UNDO'}
 
+    do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
+
     def execute(self, context):
+        start_time = time()
         with tempfile.TemporaryDirectory() as tmpdir:
             render = context.scene.render
+            space = context.space_data
+            region_3d = space.region_3d
 
             # Store original render settings
             orig_filepath = render.filepath
             orig_use_file_extension = render.use_file_extension
             orig_file_format = render.image_settings.file_format
             orig_color_depth = render.image_settings.color_depth
+            orig_overlay = space.overlay.show_overlays
+            orig_taa_render_samples = context.scene.eevee.taa_render_samples
+            orig_taa_samples = context.scene.eevee.taa_samples
 
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
             render.use_file_extension = True
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
-            space = context.space_data
-            region_3d = space.region_3d
+            space.overlay.show_overlays = False
+            context.scene.eevee.taa_render_samples = 4
+            context.scene.eevee.taa_samples = 4
 
             # Define marker data
             data = {"video_output": os.path.join(bpy.path.abspath('//'), 'playblast.mov'),
@@ -72,8 +82,18 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     "file_name": os.path.basename(bpy.data.filepath),
             }
 
+            # Get data from environment variables
+            # TODO automate list of vars to look up
+            for field in ("sequence", "scene", "studio"):
+                if field in os.environ:
+                    data[field] = os.environ[field]
+
             # Render animation from viewport
-            bpy.ops.render.opengl(animation=True)
+            if self.do_render:
+                bpy.ops.render.render(animation=True)
+            else:
+                # bpy.ops.render.opengl(animation=True, view_context=False)
+                bpy.ops.render.opengl(animation=True)
 
             sequence_marker = SequenceMarker(os.path.join(tmpdir, "tmp_image.0000.tif"),
                                              data)
@@ -84,7 +104,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_file_extension = orig_use_file_extension
             render.image_settings.file_format = orig_file_format
             render.image_settings.color_depth = orig_color_depth
+            space.overlay.show_overlays = orig_overlay
+            context.scene.eevee.taa_render_samples = orig_taa_render_samples
+            context.scene.eevee.taa_samples = orig_taa_samples
 
+            print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
 
     # TODO execute marking in modal in background?
@@ -101,8 +125,9 @@ class LFS_PT_Playblast(bpy.types.Panel):
     bl_category = "LFS"
 
     def draw(self, context):
-        col = self.layout.column()
-        col.operator("lfs.playblast", icon="RENDER_ANIMATION")
+        row = self.layout.row(align=True)
+        row.operator("lfs.playblast", icon="RENDER_ANIMATION")
+        # row.operator("lfs.playblast", icon="RENDER_ANIMATION", text="Render").do_render = True
 
 
 classes = (LFS_OT_Playblast, LFS_PT_Playblast)
