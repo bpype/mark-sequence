@@ -39,39 +39,79 @@ default_template = {
     },
     "fields": [
         {
-            "field": "frame_number",
+            "name": "project",
+            "direction": "NorthWest",
+            "string": " %s "
+        },
+        {
+            "name": "sequence",
+            "direction": "NorthWest",
+            "string": "%s "
+        },
+        {
+            "name": "shot",
+            "direction": "NorthWest",
+            "string": "%s "
+        },
+        {
+            "name": "frame_number",
             "direction": "NorthWest",
             "string": "%s"
         },
         {
-            "field": "normalized_frame_number",
+            "name": "normalized_frame_number",
             "direction": "North",
-            "string": "%04s / "
+            "string": "%04f / "
         },
         {
-            "field": "total_images",
+            "name": "total_images",
             "direction": "North",
             "string": "%s"
         },
         {
-            "field": "user",
-            "direction": "SouthEast",
-            "string": "%10s "
-        },
-        {
-            "field": "hostname",
-            "direction": "SouthEast",
-            "string": "%10s "
-        },
-        {
-            "field": "date",
+            "name": "file_name",
             "direction": "NorthEast",
-            "string": "%s"
+            "string": " %s "
+        },
+        {
+            "name": "focal_length",
+            "direction": "NorthEast",
+            "string": " Focal length: %01.2f mm "
+        },
+        {
+            "name": "resolution",
+            "direction": "NorthEast",
+            "string": " %s "
+        },
+        {
+            "name": "copyright",
+            "direction": "SouthWest",
+            "string": " %s "
+        },
+        {
+            "name": "studio",
+            "direction": "SouthEast",
+            "string": "%s "
+        },
+        {
+            "name": "user",
+            "direction": "SouthEast",
+            "string": "%s "
+        },
+        {
+            "name": "hostname",
+            "direction": "SouthEast",
+            "string": "%s "
+        },
+        {
+            "name": "date",
+            "direction": "SouthEast",
+            "string": " %s "
         }
     ],
     "image_fields": [
         # {
-        #     "field": "circle",
+        #     "name": "circle",
         #     "direction": "SouthWest",
         #     "geometry": "10x10+20+4"
         # }
@@ -119,16 +159,16 @@ class SequenceMarker():
         # Special fields: for each special field, give a default if it is
         # specified in the template but not passed as data
         for field in self.template['fields']:
-            if field['field'] == 'date' and not 'date' in self.data:
+            if field['name'] == 'date' and not 'date' in self.data:
                 import datetime
                 image_data['date'] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
-            if field['field'] == 'user' and not 'user' in self.data:
+            if field['name'] == 'user' and not 'user' in self.data:
                 import getpass
                 image_data['user'] = getpass.getuser()
-            if field['field'] == 'hostname' and not 'hostname' in self.data:
+            if field['name'] == 'hostname' and not 'hostname' in self.data:
                 import platform
                 image_data['hostname'] = platform.node()
-            if field['field'] == 'total_images' and not 'total_images' in self.data :
+            if field['name'] == 'total_images' and not 'total_images' in self.data :
                 image_data['total_images'] = len(self.frame_set)
 
         for i, image_number in enumerate(self.frame_set):
@@ -137,16 +177,15 @@ class SequenceMarker():
                 continue
             image_source = self.file_sequence.frame(image_number)
             image_marked = os.path.join(self.mark_dir,
-                                        "marked.%04i.png" % (i - self.data['offset'] + 1))
-            print("Marking image %s..." % image_source)
+                                        "marked.%04i.tif" % (i - self.data['offset'] + 1))
+            print("Marking image %s..." % image_marked)
 
-            # Special fields: for each special field, give a default if it is
-            # specified in the template but not passed as data. These are
-            # evaluated at each frame
+            # Special fields evaluated at each frame
             for field in self.template['fields']:
-                if field['field'] == 'frame_number' and not 'frame_number' in self.data:
+                if field['name'] == 'frame_number' and not 'frame_number' in self.data:
                     image_data['frame_number'] = image_number
-                if field['field'] == 'normalized_frame_number' and not 'normalized_frame_number' in self.data:
+                if (field['name'] == 'normalized_frame_number'
+                        and not 'normalized_frame_number' in self.data):
                     image_data['normalized_frame_number'] = i - self.data['offset'] + 1
 
             self.mark_image(image_source, image_marked, image_data)
@@ -182,20 +221,18 @@ class SequenceMarker():
         for field in self.template['fields']:
             direction = field['direction']
             value = field['string']
-            # Try formatting the string with the value from the command line
+            # Try formatting the string with the value from the passed data
             try:
-                value %= image_data[field['field']]
-            except TypeError:
-                pass
+                value %= image_data[field['name']]
+            except KeyError:
+                continue
             if not direction in directions:
                 directions[direction] = ''
             directions[direction] += (value)
 
         # Add annotations for each field
         for direction, value in directions.items():
-            convert_args.extend(['-gravity', direction,
-                         '-annotate', '0',
-                         value])
+            convert_args.extend(['-gravity', direction, '-annotate', '0', value])
 
         # Add image annotations
         for image in self.template['image_fields']:
@@ -254,7 +291,7 @@ if __name__ == "__main__":
             template may be specified, which will contain fields such as:
 
             {
-                "field": "shot_name",
+                "name": "shot",
                 "direction": "NorthWest",
                 "string": '%s  '
             },
@@ -305,13 +342,13 @@ if __name__ == "__main__":
     # Add text fields to argument parser
     group = parser.add_argument_group('Template text field arguments')
     for field in template['fields']:
-        field = field['field'].replace('_', '-')
+        field = field['name'].replace('_', '-')
         group.add_argument('--' + field, type=str, default='')
 
     # Add image fields to argument parser
     group = parser.add_argument_group('Template image field arguments')
     for image in template['image_fields']:
-        image = image['field'].replace('_', '-')
+        image = image['name'].replace('_', '-')
         group.add_argument('--' + image, type=str, default='')
 
     args = parser.parse_args()

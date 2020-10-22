@@ -31,6 +31,7 @@ import os
 import tempfile
 from mark_sequence import SequenceMarker
 
+
 class LFS_OT_Playblast(bpy.types.Operator):
     '''Group multiple plane layers from current camera into one'''
     bl_idname = "lfs.playblast"
@@ -39,17 +40,21 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
     def execute(self, context):
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Setup render settings
             render = context.scene.render
+
+            # Store original render settings
             orig_filepath = render.filepath
             orig_use_file_extension = render.use_file_extension
             orig_file_format = render.image_settings.file_format
             orig_color_depth = render.image_settings.color_depth
 
+            # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
             render.use_file_extension = True
-            render.image_settings.file_format = 'PNG'
+            render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
+            space = context.space_data
+            region_3d = space.region_3d
 
             # Define marker data
             data = {"video_output": os.path.join(bpy.path.abspath('//'), 'playblast.mov'),
@@ -57,16 +62,24 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     "resolution_y": render.resolution_y,
                     "start_frame": context.scene.frame_start,
                     "end_frame": context.scene.frame_end,
-                    "offset": 0}
+                    "offset": 0,
+                    "project": "The Siren",
+                    "resolution": "%s×%s" % (render.resolution_x, render.resolution_y),
+                    # Focal length is dependent upon 3D view state
+                    "focal_length": (context.scene.camera.data.lens
+                                     if region_3d.view_perspective == 'CAMERA'
+                                     else space.lens),
+                    "file_name": os.path.basename(bpy.data.filepath),
+            }
 
             # Render animation from viewport
             bpy.ops.render.opengl(animation=True)
 
-            sequence_marker = SequenceMarker(os.path.join(tmpdir, "tmp_image.0000.png"),
+            sequence_marker = SequenceMarker(os.path.join(tmpdir, "tmp_image.0000.tif"),
                                              data)
             sequence_marker.mark_sequence()
 
-            # Reset render settings
+            # Restore original render settings
             render.filepath = orig_filepath
             render.use_file_extension = orig_use_file_extension
             render.image_settings.file_format = orig_file_format
@@ -77,6 +90,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     # TODO execute marking in modal in background?
     # def modal(self, context):
     #     return {'FINISHED'}
+
 
 class LFS_PT_Playblast(bpy.types.Panel):
     ''''''
@@ -89,6 +103,7 @@ class LFS_PT_Playblast(bpy.types.Panel):
     def draw(self, context):
         col = self.layout.column()
         col.operator("lfs.playblast", icon="RENDER_ANIMATION")
+
 
 classes = (LFS_OT_Playblast, LFS_PT_Playblast)
 
