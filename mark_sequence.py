@@ -37,8 +37,8 @@ bins = {'Linux':
         {'ffmpeg': 'ffmpeg',
          'convert': 'convert'},
         'Windows':
-        {'ffmpeg': '"C:\\bin\\ffmpeg\\ffmpeg.exe"',
-         'convert': '"C:\\Program Files\\ImageMagick-6.9.3-Q16\\convert.exe"'},
+        {'ffmpeg': 'ffmpeg',
+         'convert': 'convert'},
         'Darwin':
         {'ffmpeg': '/Applications/ffmpeg',
          'convert': '/opt/ImageMagick/bin/convert'}
@@ -270,7 +270,8 @@ class SequenceMarker():
 
         # Output
         convert_args.append('%s' % output_path)
-        proc = subprocess.run(convert_args, check=True)
+        # Windows needs to use shell=True, see https://stackoverflow.com/a/41860823
+        proc = subprocess.run(convert_args, check=True, shell=platform.system() == 'Windows')
 
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
         print("Generating video...")
