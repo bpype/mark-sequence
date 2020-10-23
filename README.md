@@ -15,6 +15,20 @@ the installer wizard, make sure you select "Add application directory
 to your system path", "Install FFmpeg" and "Install legacy utilities
 (e.g. convert)".
 
+The script also depends on the
+[Fileseq](https://pypi.org/project/Fileseq/) Python library. You can
+install it with pip:
+
+``` bash
+pip install fileseq
+```
+
+or sometimes, if you have Python 2 and Python 3 installed on your system:
+
+``` bash
+pip3 install fileseq
+```
+
 ## Usage
 Make an annotated movie output from a list of images. A JSON template
 may be specified, which will contain fields such as:
