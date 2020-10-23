@@ -66,15 +66,24 @@ class LFS_OT_Playblast(bpy.types.Operator):
             context.scene.eevee.taa_render_samples = 4
             context.scene.eevee.taa_samples = 4
 
+            # Get output filepath
+            dir_path, file_name = os.path.split(bpy.data.filepath)
+            dir_path += "-movie"
+            out_name, _ext = os.path.splitext(file_name)
+            out_name += ".mov"
+
+            os.makedirs(dir_path, exist_ok=True)
+
             # Define marker data
-            data = {"video_output": os.path.join(bpy.path.abspath('//'), 'playblast.mov'),
-                    "resolution_x": render.resolution_x,
-                    "resolution_y": render.resolution_y,
+            data = {"video_output": os.path.join(dir_path, out_name),
+                    "resolution_x": render.resolution_x * render.resolution_percentage // 100,
+                    "resolution_y": render.resolution_y * render.resolution_percentage // 100,
                     "start_frame": context.scene.frame_start,
                     "end_frame": context.scene.frame_end,
                     "offset": 0,
                     "project": "The Siren",
-                    "resolution": "%s×%s" % (render.resolution_x, render.resolution_y),
+                    "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
+                                             render.resolution_y * render.resolution_percentage // 100),
                     # Focal length is dependent upon 3D view state
                     "focal_length": (context.scene.camera.data.lens
                                      if region_3d.view_perspective == 'CAMERA'

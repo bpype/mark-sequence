@@ -219,12 +219,12 @@ class SequenceMarker():
         # Add gray band overlay
         convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
         convert_args.extend(['-draw', 'rectangle 0,0 %s,%s' % (image_data['resolution_x'],
-                                                       settings['font_size'])])
+                                                               settings['font_size'])])
         convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
         convert_args.extend(['-draw', 'rectangle 0,%s %s,%s' % (image_data['resolution_y'] -
-                                                        settings['font_size'] - 2,
-                                                        image_data['resolution_x'],
-                                                        image_data['resolution_y'])])
+                                                                settings['font_size'] - 2,
+                                                                image_data['resolution_x'],
+                                                                image_data['resolution_y'])])
 
         # Setting text color and size
         convert_args.extend(['-fill', settings['color'], '-pointsize', str(settings['font_size'])])
