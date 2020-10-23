@@ -17,12 +17,12 @@
 
 
 bl_info = {
-    "name": "LFS Layout Render",
+    "name": "LFS Playblast",
     "author": "Les Fées Spéciales",
-    "version": (1, 0, 1),
+    "version": (1, 0, 2),
     "blender": (2, 80, 0),
     "location": "View3D > Tools > LFS",
-    "description": "Layout playblast with right info",
+    "description": "Playblast with right info",
     "category": "LFS"}
 
 
