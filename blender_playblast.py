@@ -35,6 +35,23 @@ from mark_sequence import SequenceMarker
 from time import time
 
 
+
+def find_space(context):
+    if context.space_data == 'VIEW_3D':
+        return context.space_data
+    for area in context.screen.areas:
+        if area.type == 'VIEW_3D':
+            return area.spaces[0]
+    return None
+
+
+def find_region_3d(context):
+    for area in context.screen.areas:
+        if area.type == 'VIEW_3D':
+            return area.spaces[0].region_3d
+    return None
+
+
 class LFS_OT_Playblast(bpy.types.Operator):
     '''Group multiple plane layers from current camera into one'''
     bl_idname = "lfs.playblast"
@@ -47,8 +64,12 @@ class LFS_OT_Playblast(bpy.types.Operator):
         start_time = time()
         with tempfile.TemporaryDirectory() as tmpdir:
             render = context.scene.render
-            space = context.space_data
-            region_3d = space.region_3d
+            space = find_space(context)
+
+            if hasattr(space, 'region_3d'):
+                region_3d = space.region_3d
+            else:
+                region_3d = find_region_3d(context)
 
             # Store original render settings
             orig_filepath = render.filepath
@@ -88,7 +109,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                                              render.resolution_y * render.resolution_percentage // 100),
                     # Focal length is dependent upon 3D view state
                     "focal_length": (context.scene.camera.data.lens
-                                     if region_3d.view_perspective == 'CAMERA'
+                                     if region_3d is not None and region_3d.view_perspective == 'CAMERA'
                                      else space.lens),
                     "file_name": os.path.basename(bpy.data.filepath),
             }
