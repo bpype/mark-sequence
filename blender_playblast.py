@@ -23,6 +23,8 @@ bl_info = {
     "blender": (2, 80, 0),
     "location": "View3D > Tools > LFS",
     "description": "Playblast with right info",
+    "wiki_url": "https://gitlab.com/lfs.coop/blender/lfs-blender-package-manager",
+    "tracker_url": "https://gitlab.com/lfs.coop/blender/lfs-blender-package-manager/-/issues",
     "category": "LFS"}
 
 
