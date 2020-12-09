@@ -60,6 +60,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
 
+    studio: bpy.props.StringProperty(name="Studio", description="Studio name")
+    project: bpy.props.StringProperty(name="Project", description="Project name")
+    scene: bpy.props.StringProperty(name="Scene", description="Scene number")
+    sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
+
     def execute(self, context):
         start_time = time()
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -116,11 +121,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             # Get data from environment variables
             # TODO automate list of vars to look up
-            for field in ("sequence", "scene"):
-                if field in os.environ:
-                    data[field] = int(os.environ[field])
-            if "studio" in os.environ:
-                data["studio"] = os.environ["studio"]
+            for field in ("studio", "project", "sequence", "scene"):
+                if getattr(self, field):
+                    data[field] = getattr(self, field)
+                elif field in os.environ:
+                    data[field] = os.environ[field]
 
             # Render animation from viewport
             if self.do_render:
