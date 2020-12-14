@@ -284,7 +284,8 @@ class SequenceMarker():
             ffmpeg_args.extend(['-i', 'audio_file'])
             ffmpeg_args.extend(['-c:a', 'copy'])
 
-        ffmpeg_args.extend(['-c:v', 'h264', '-crf', '25', '-preset', 'slow', '-pix_fmt', 'yuv420p'])
+        ffmpeg_args.extend(['-c:v', 'mjpeg', '-q:v', '3'])
+        # ffmpeg_args.extend(['-c:v', 'h264', '-crf', '25', '-preset', 'slow', '-pix_fmt', 'yuv420p'])
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(['%s' % (destination)])
