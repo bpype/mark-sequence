@@ -29,6 +29,7 @@ bl_info = {
 
 
 import bpy
+from bpy_extras.io_utils import ExportHelper
 import os
 import tempfile
 from .mark_sequence import SequenceMarker
@@ -52,11 +53,17 @@ def find_region_3d(context):
     return None
 
 
-class LFS_OT_Playblast(bpy.types.Operator):
+class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     '''Group multiple plane layers from current camera into one'''
     bl_idname = "lfs.playblast"
     bl_label = "Playblast"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER'}
+
+    filename_ext = ".mov"
+    filter_glob: bpy.props.StringProperty(
+        default="*.mov",
+        options={'HIDDEN'},
+    )
 
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
 
@@ -94,16 +101,13 @@ class LFS_OT_Playblast(bpy.types.Operator):
             context.scene.eevee.taa_render_samples = 4
             context.scene.eevee.taa_samples = 4
 
-            # Get output filepath
-            dir_path, file_name = os.path.split(bpy.data.filepath)
-            dir_path += "-movie"
-            out_name, _ext = os.path.splitext(file_name)
-            out_name += ".mov"
+            out_name = self.filepath
+            dir_path = os.path.dirname(out_name)
 
             os.makedirs(dir_path, exist_ok=True)
 
             # Define marker data
-            data = {"video_output": os.path.join(dir_path, out_name),
+            data = {"video_output": out_name,
                     "resolution_x": render.resolution_x * render.resolution_percentage // 100,
                     "resolution_y": render.resolution_y * render.resolution_percentage // 100,
                     "start_frame": context.scene.frame_start,
