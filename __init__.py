@@ -109,7 +109,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     "start_frame": context.scene.frame_start,
                     "end_frame": context.scene.frame_end,
                     "offset": 0,
-                    "project": "The Siren",
+                    "project": "",
                     "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
                                              render.resolution_y * render.resolution_percentage // 100),
                     # Focal length is dependent upon 3D view state
