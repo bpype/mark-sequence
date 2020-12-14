@@ -31,7 +31,7 @@ bl_info = {
 import bpy
 import os
 import tempfile
-from mark_sequence import SequenceMarker
+from .mark_sequence import SequenceMarker
 from time import time
 
 
