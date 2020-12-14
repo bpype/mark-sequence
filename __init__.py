@@ -21,7 +21,7 @@ bl_info = {
     "author": "Les Fées Spéciales",
     "version": (1, 0, 2),
     "blender": (2, 80, 0),
-    "location": "View3D > Tools > LFS",
+    "location": "View3D > View Menu",
     "description": "Playblast with right info",
     "wiki_url": "https://gitlab.com/lfs.coop/mark-sequence",
     "tracker_url": "https://gitlab.com/lfs.coop/mark-sequence/-/issues",
@@ -155,25 +155,18 @@ class LFS_OT_Playblast(bpy.types.Operator):
     #     return {'FINISHED'}
 
 
-class LFS_PT_Playblast(bpy.types.Panel):
-    ''''''
-    bl_label = "Playblast"
-    bl_category = 'Tools'
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = "LFS"
+def playblast_button(self, context):
+    row = self.layout.row()
+    self.layout.operator(LFS_OT_Playblast.bl_idname, text="LFS Playblast", icon="RENDER_ANIMATION")
+    self.layout.separator()
 
-    def draw(self, context):
-        row = self.layout.row(align=True)
-        row.operator("lfs.playblast", icon="RENDER_ANIMATION")
-        # row.operator("lfs.playblast", icon="RENDER_ANIMATION", text="Render").do_render = True
+def register():
+    bpy.utils.register_class(LFS_OT_Playblast)
+    bpy.types.VIEW3D_MT_view.prepend(playblast_button)
 
-
-classes = (LFS_OT_Playblast, LFS_PT_Playblast)
-
-
-register, unregister = bpy.utils.register_classes_factory(classes)
-
+def unregister():
+    bpy.types.VIEW3D_MT_view.remove(playblast_button)
+    bpy.utils.unregister_class(LFS_OT_Playblast)
 
 if __name__ == '__main__':
     register()
