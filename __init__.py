@@ -106,6 +106,15 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
             os.makedirs(dir_path, exist_ok=True)
 
+            # Focal length is dependent upon 3D view state
+            # TODO Fix case when rendering 3DView and several are displayed
+            if self.do_render:
+                lens = context.scene.camera.data.lens
+            else:
+                lens = (context.scene.camera.data.lens
+                        if region_3d is not None and region_3d.view_perspective == 'CAMERA'
+                        else space.lens)
+
             # Define marker data
             data = {"video_output": out_name,
                     "resolution_x": render.resolution_x * render.resolution_percentage // 100,
@@ -116,10 +125,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                     "project": "",
                     "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
                                              render.resolution_y * render.resolution_percentage // 100),
-                    # Focal length is dependent upon 3D view state
-                    "focal_length": (context.scene.camera.data.lens
-                                     if region_3d is not None and region_3d.view_perspective == 'CAMERA'
-                                     else space.lens),
+                    "focal_length": lens,
                     "file_name": os.path.basename(bpy.data.filepath),
             }
 
