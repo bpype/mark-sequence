@@ -40,8 +40,8 @@ bins = {'Linux':
         {'ffmpeg': 'ffmpeg',
          'convert': 'convert'},
         'Darwin':
-        {'ffmpeg': '/Applications/ffmpeg',
-         'convert': '/opt/ImageMagick/bin/convert'}
+        {'ffmpeg': 'ffmpeg',
+         'convert': 'convert'}
 }
 
 
