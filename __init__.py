@@ -106,8 +106,13 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
             os.makedirs(dir_path, exist_ok=True)
 
+            # Set current frame to first frame. Workaround GP bug at
+            # https://developer.blender.org/T85035
+            context.scene.frame_set(context.scene.frame_end)
+
             # Focal length is dependent upon 3D view state
             # TODO Fix case when rendering 3DView and several are displayed
+            # TODO animated focal length -> dict of frames
             if self.do_render:
                 lens = context.scene.camera.data.lens
             else:
