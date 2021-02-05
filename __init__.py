@@ -66,6 +66,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     )
 
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
+    do_hide_overlays: bpy.props.BoolProperty(name="Hide Overlays", description="Hide overlays in the viewport preview", default=True)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -97,7 +98,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             render.use_file_extension = True
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
-            space.overlay.show_overlays = False
+            if do_hide_overlays:
+                space.overlay.show_overlays = False
             context.scene.eevee.taa_render_samples = 4
             context.scene.eevee.taa_samples = 4
 
