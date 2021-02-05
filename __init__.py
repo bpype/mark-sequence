@@ -57,7 +57,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     '''Group multiple plane layers from current camera into one'''
     bl_idname = "lfs.playblast"
     bl_label = "Playblast"
-    bl_options = {'REGISTER'}
+    bl_options = {'REGISTER', 'PRESET'}
 
     filename_ext = ".mov"
     filter_glob: bpy.props.StringProperty(
