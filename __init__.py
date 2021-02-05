@@ -167,6 +167,17 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
 
+    def draw(self, context):
+        layout = self.layout
+        col.prop(self, "do_render")
+        col.prop(self, "do_hide_overlays")
+
+        col = layout.column(align=True)
+        col.prop(self, "studio")
+        col.prop(self, "project")
+        col.prop(self, "sequence")
+        col.prop(self, "scene")
+
     # TODO execute marking in modal in background?
     # def modal(self, context):
     #     return {'FINISHED'}
