@@ -70,8 +70,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
-    scene: bpy.props.StringProperty(name="Scene", description="Scene number")
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
+    scene: bpy.props.StringProperty(name="Shot", description="Shot number")
 
     def execute(self, context):
         start_time = time()
