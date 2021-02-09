@@ -98,7 +98,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             render.use_file_extension = True
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
-            if do_hide_overlays:
+            if self.do_hide_overlays:
                 space.overlay.show_overlays = False
             context.scene.eevee.taa_render_samples = 4
             context.scene.eevee.taa_samples = 4
@@ -169,6 +169,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
     def draw(self, context):
         layout = self.layout
+        col = layout.column()
         col.prop(self, "do_render")
         col.prop(self, "do_hide_overlays")
 
