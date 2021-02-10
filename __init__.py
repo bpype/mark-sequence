@@ -67,6 +67,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
     do_hide_overlays: bpy.props.BoolProperty(name="Hide Overlays", description="Hide overlays in the viewport preview", default=True)
+    do_export_audio: bpy.props.BoolProperty(name="Export Audio", description="Export the audio from the VSE as audio track", default=True)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -151,6 +152,21 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                 # bpy.ops.render.opengl(animation=True, view_context=False)
                 bpy.ops.render.opengl(animation=True)
 
+            # Export Audio if needed
+            if self.do_export_audio:
+                print("Exporting Audio")
+                audio_path = os.path.join(tmpdir, "sound.mp3")
+                bpy.ops.sound.mixdown(filepath=audio_path,
+                    relative_path=False,
+                    container='MP3',
+                    codec='MP3',
+                    format='S32',
+                    bitrate=256,
+                    accuracy=512)
+                data["audio_file"] = audio_path
+
+            # Start sequence marker and movie creation
+
             sequence_marker = SequenceMarker(os.path.join(tmpdir, "tmp_image.0000.tif"),
                                              data)
             sequence_marker.mark_sequence()
@@ -172,6 +188,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         col = layout.column()
         col.prop(self, "do_render")
         col.prop(self, "do_hide_overlays")
+        col.prop(self, "do_export_audio")
 
         col = layout.column(align=True)
         col.prop(self, "studio")

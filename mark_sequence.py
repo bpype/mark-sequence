@@ -162,7 +162,8 @@ class SequenceMarker():
         marked_sequence = fileseq.findSequenceOnDisk(last_image_marked)
         if self.data['video_output']:
             self.render_video(self.get_sequence_path(marked_sequence),
-                              os.path.abspath(self.data['video_output']))
+                              os.path.abspath(self.data['video_output']),
+                              audio_file=self.data["audio_file"])
 
         self.delete_temp_dir()
 
@@ -281,8 +282,9 @@ class SequenceMarker():
         ffmpeg_args.extend(['-i', img_sources])
 
         if audio_file is not None:
-            ffmpeg_args.extend(['-i', 'audio_file'])
+            ffmpeg_args.extend(['-i', audio_file])
             ffmpeg_args.extend(['-c:a', 'copy'])
+            ffmpeg_args.extend(["-map", "0:0", "-map", "1:0"])
 
         ffmpeg_args.extend(['-c:v', 'mjpeg', '-q:v', '3'])
         # ffmpeg_args.extend(['-c:v', 'h264', '-crf', '25', '-preset', 'slow', '-pix_fmt', 'yuv420p'])
