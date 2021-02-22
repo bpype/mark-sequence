@@ -163,7 +163,8 @@ class SequenceMarker():
         if self.data['video_output']:
             self.render_video(self.get_sequence_path(marked_sequence),
                               os.path.abspath(self.data['video_output']),
-                              audio_file=self.data["audio_file"])
+                              audio_file=self.data["audio_file"],
+                              frame_rate=self.data["frame_rate"])
 
         self.delete_temp_dir()
 
@@ -343,6 +344,9 @@ if __name__ == "__main__":
                         help='render video to this destination')
     group.add_argument('-a', '--audio-file', type=str,
                         help='if rendering video, use this file as audio track')
+
+    group.add_argument('-r', '--frame_rate', type=float, default=25.0,
+                        help='playback speed')
 
     group = parser.add_argument_group('frame options')
     group.add_argument('-O', '--offset', type=int, default=0,

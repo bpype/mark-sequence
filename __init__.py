@@ -136,6 +136,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                     "focal_length": lens,
                     "file_name": os.path.basename(bpy.data.filepath),
                     "audio_file": None,
+                    "frame_rate": render.fps / render.fps_base
             }
 
             # Get data from environment variables
