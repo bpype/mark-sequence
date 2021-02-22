@@ -283,7 +283,7 @@ class SequenceMarker():
 
         if audio_file is not None:
             ffmpeg_args.extend(['-i', audio_file])
-            ffmpeg_args.extend(['-c:a', 'copy'])
+            ffmpeg_args.extend(['-c:a', 'aac', "-b:a", "160k"])
             ffmpeg_args.extend(["-map", "0:0", "-map", "1:0"])
 
         ffmpeg_args.extend(['-c:v', 'mjpeg', '-q:v', '3'])
