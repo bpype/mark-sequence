@@ -68,6 +68,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
     do_hide_overlays: bpy.props.BoolProperty(name="Hide Overlays", description="Hide overlays in the viewport preview", default=True)
     do_export_audio: bpy.props.BoolProperty(name="Export Audio", description="Export the audio from the VSE as audio track", default=True)
+    do_simplify: bpy.props.BoolProperty(name="Simplify", description="Enable mesh simplification from the render settings", default=False)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -90,6 +91,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             orig_use_file_extension = render.use_file_extension
             orig_file_format = render.image_settings.file_format
             orig_color_depth = render.image_settings.color_depth
+            orig_simplify = render.use_simplify
             orig_overlay = space.overlay.show_overlays
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
@@ -99,6 +101,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             render.use_file_extension = True
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
+            render.use_simplify = self.do_simplify
             if self.do_hide_overlays:
                 space.overlay.show_overlays = False
             context.scene.eevee.taa_render_samples = 4
@@ -136,7 +139,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                     "focal_length": lens,
                     "file_name": os.path.basename(bpy.data.filepath),
                     "audio_file": None,
-                    "frame_rate": render.fps / render.fps_base
+                    "frame_rate": render.fps / render.fps_base,
+                    "simplify": "Simplify " + ("ON" if self.do_simplify else "off")
             }
 
             # Get data from environment variables
@@ -178,6 +182,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             render.use_file_extension = orig_use_file_extension
             render.image_settings.file_format = orig_file_format
             render.image_settings.color_depth = orig_color_depth
+            render.use_simplify = orig_simplify
             space.overlay.show_overlays = orig_overlay
             context.scene.eevee.taa_render_samples = orig_taa_render_samples
             context.scene.eevee.taa_samples = orig_taa_samples
@@ -190,6 +195,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         col = layout.column()
         col.prop(self, "do_render")
         col.prop(self, "do_hide_overlays")
+        col.prop(self, "do_simplify")
         col.prop(self, "do_export_audio")
 
         col = layout.column(align=True)

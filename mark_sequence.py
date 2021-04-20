@@ -103,6 +103,11 @@ default_template = {
             "string": " %s "
         },
         {
+            "name": "simplify",
+            "direction": "SouthWest",
+            "string": " %s "
+        },
+        {
             "name": "studio",
             "direction": "SouthEast",
             "string": " %s "
