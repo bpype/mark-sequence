@@ -74,6 +74,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     project: bpy.props.StringProperty(name="Project", description="Project name")
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
     scene: bpy.props.StringProperty(name="Shot", description="Shot number")
+    version: bpy.props.StringProperty(name="Version", description="Version of the shot")
 
     def execute(self, context):
         start_time = time()
@@ -134,6 +135,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                     "end_frame": context.scene.frame_end,
                     "offset": 0,
                     "project": "",
+                    "version": "",
                     "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
                                              render.resolution_y * render.resolution_percentage // 100),
                     "focal_length": lens,
@@ -145,7 +147,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
             # Get data from environment variables
             # TODO automate list of vars to look up
-            for field in ("studio", "project", "sequence", "scene"):
+            for field in ("studio", "project", "sequence", "scene", "version"):
                 if getattr(self, field):
                     data[field] = getattr(self, field)
                 elif field in os.environ:
@@ -203,6 +205,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         col.prop(self, "project")
         col.prop(self, "sequence")
         col.prop(self, "scene")
+        col.prop(self, "version")
 
     # TODO execute marking in modal in background?
     # def modal(self, context):

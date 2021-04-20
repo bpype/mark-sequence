@@ -88,6 +88,11 @@ default_template = {
             "string": " %s "
         },
         {
+            "name": "version",
+            "direction": "NorthEast",
+            "string": " %s "
+        },
+        {
             "name": "focal_length",
             "direction": "NorthEast",
             "string": " Focal length: %01.2f mm "
