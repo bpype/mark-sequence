@@ -39,7 +39,8 @@ from .mark_sequence import SequenceMarker
 
 
 def find_space(context):
-    if context.space_data.type == 'VIEW_3D':
+    if (context.space_data is not None
+            and context.space_data.type == 'VIEW_3D'):
         return context.space_data
     for area in context.screen.areas:
         if area.type == 'VIEW_3D':
