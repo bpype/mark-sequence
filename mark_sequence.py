@@ -47,7 +47,7 @@ bins = {'Linux':
 
 default_template = {
     "settings": {
-        "font_size": 16,
+        "font_size": 24,
         "color": "white"
         # "color": "chartreuse"
     },
@@ -94,7 +94,7 @@ default_template = {
         },
         {
             "name": "focal_length",
-            "direction": "NorthEast",
+            "direction": "SouthWest",
             "string": " Focal length: %01.2f mm "
         },
         {
@@ -229,17 +229,13 @@ class SequenceMarker():
         settings = self.template['settings']
 
         # Add gray band overlay
-        convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
+        convert_args.extend(['-fill', 'rgba(0,0,0,0.5)'])
         convert_args.extend(['-draw', 'rectangle 0,0 %s,%s' % (image_data['resolution_x'],
                                                                settings['font_size'])])
-        convert_args.extend(['-fill', 'rgba(0,0,0,0.3)'])
         convert_args.extend(['-draw', 'rectangle 0,%s %s,%s' % (image_data['resolution_y'] -
                                                                 settings['font_size'] - 2,
                                                                 image_data['resolution_x'],
                                                                 image_data['resolution_y'])])
-
-        # Setting text color and size
-        convert_args.extend(['-fill', settings['color'], '-pointsize', str(settings['font_size'])])
 
         directions = {}
 
@@ -257,7 +253,21 @@ class SequenceMarker():
                 directions[direction] = ''
             directions[direction] += (value)
 
-        # Add annotations for each field
+        # Set text color and size for outside stroke
+        convert_args.extend(['-fill', 'black', '-strokewidth', '3',
+                             '-stroke', 'black', '-weight', 'bold',
+                             '-pointsize', str(settings['font_size'])])
+
+        # Add annotations for each field, for outside stroke
+        for direction, value in directions.items():
+            convert_args.extend(['-gravity', direction, '-annotate', '0', value])
+
+        # Set text color and size for fill
+        convert_args.extend(['-fill', settings['color'],
+                             '-stroke', 'none', '-weight', 'bold',
+                             '-pointsize', str(settings['font_size'])])
+
+        # Add annotations for each field, with only inside fill
         for direction, value in directions.items():
             convert_args.extend(['-gravity', direction, '-annotate', '0', value])
 
