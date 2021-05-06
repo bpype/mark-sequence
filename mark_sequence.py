@@ -93,11 +93,6 @@ default_template = {
             "string": " %s "
         },
         {
-            "name": "focal_length",
-            "direction": "SouthWest",
-            "string": " Focal length: %01.2f mm "
-        },
-        {
             "name": "resolution",
             "direction": "NorthEast",
             "string": " %s "
@@ -111,6 +106,11 @@ default_template = {
             "name": "simplify",
             "direction": "SouthWest",
             "string": " %s "
+        },
+        {
+            "name": "focal_length",
+            "direction": "SouthWest",
+            "string": " Focal length: %d mm "
         },
         {
             "name": "studio",
@@ -213,6 +213,8 @@ class SequenceMarker():
                 if (field['name'] == 'normalized_frame_number'
                         and not 'normalized_frame_number' in self.data):
                     image_data['normalized_frame_number'] = i - self.data['offset'] + 1
+                if field['name'] in self.data and type(self.data[field['name']]) is dict:
+                    image_data[field['name']] = self.data[field['name']][image_number]
 
             self.mark_image(image_source, image_marked, image_data)
 

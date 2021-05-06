@@ -32,13 +32,14 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 import os
 import tempfile
-from .mark_sequence import SequenceMarker
 from time import time
+
+from .mark_sequence import SequenceMarker
 
 
 
 def find_space(context):
-    if context.space_data == 'VIEW_3D':
+    if context.space_data.type == 'VIEW_3D':
         return context.space_data
     for area in context.screen.areas:
         if area.type == 'VIEW_3D':
@@ -117,15 +118,23 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             # https://developer.blender.org/T85035
             context.scene.frame_set(context.scene.frame_end)
 
-            # Focal length is dependent upon 3D view state
-            # TODO Fix case when rendering 3DView and several are displayed
-            # TODO animated focal length -> dict of frames
-            if self.do_render:
-                lens = context.scene.camera.data.lens
-            else:
-                lens = (context.scene.camera.data.lens
-                        if region_3d is not None and region_3d.view_perspective == 'CAMERA'
-                        else space.lens)
+            # Get animated lens, store it into a dict
+            lens = {}
+            previous_frame = context.scene.frame_current
+            for f in range(context.scene.frame_start, context.scene.frame_end+1):
+                context.scene.frame_set(f)
+                # Focal length is dependent upon 3D view state
+                if self.do_render:
+                    lens[f] = context.scene.camera.data.lens
+                else:
+                    lens[f] = (context.scene.camera.data.lens
+                               if region_3d is not None
+                                  and region_3d.view_perspective == 'CAMERA'
+                               else space.lens)
+                # Skip decimal precision, we probably don't need that
+                lens[f] = round(lens[f])
+            context.scene.frame_set(previous_frame)
+
 
             # Define marker data
             data = {"video_output": out_name,
