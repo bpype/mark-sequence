@@ -95,6 +95,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             orig_file_format = render.image_settings.file_format
             orig_color_depth = render.image_settings.color_depth
             orig_simplify = render.use_simplify
+            orig_simplify_subdivision = render.simplify_subdivision
+            orig_simplify_subdivision_render = render.simplify_subdivision_render
             orig_overlay = space.overlay.show_overlays
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
@@ -105,6 +107,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
             render.use_simplify = self.do_simplify
+            render.simplify_subdivision = 0
+            render.simplify_subdivision_render = 0
             if self.do_hide_overlays:
                 space.overlay.show_overlays = False
             context.scene.eevee.taa_render_samples = 4
@@ -195,6 +199,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             render.image_settings.file_format = orig_file_format
             render.image_settings.color_depth = orig_color_depth
             render.use_simplify = orig_simplify
+            render.simplify_subdivision = orig_simplify_subdivision
+            render.simplify_subdivision_render = orig_simplify_subdivision_render
             space.overlay.show_overlays = orig_overlay
             context.scene.eevee.taa_render_samples = orig_taa_render_samples
             context.scene.eevee.taa_samples = orig_taa_samples
