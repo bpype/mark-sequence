@@ -27,6 +27,7 @@ import fileseq
 import textwrap
 from tempfile import mkdtemp
 from math import inf
+from concurrent.futures import ThreadPoolExecutor
 
 
 __all__ = ['default_template', 'SequenceMarker']
@@ -197,26 +198,26 @@ class SequenceMarker():
             if field['name'] == 'total_images' and not 'total_images' in self.data :
                 image_data['total_images'] = len(self.frame_set)
 
-        for i, image_number in enumerate(self.frame_set):
-            if (image_number < self.data['start_frame']
-                or image_number > self.data['end_frame']):
-                continue
-            image_source = self.file_sequence.frame(image_number)
-            image_marked = os.path.join(self.mark_dir,
-                                        "marked.%04i.tif" % (i - self.data['offset'] + 1))
-            print("Marking image %s..." % image_marked)
+        with ThreadPoolExecutor() as executor:
+            for i, image_number in enumerate(self.frame_set):
+                if (image_number < self.data['start_frame']
+                    or image_number > self.data['end_frame']):
+                    continue
+                image_source = self.file_sequence.frame(image_number)
+                image_marked = os.path.join(self.mark_dir,
+                                            "marked.%04i.tif" % (i - self.data['offset'] + 1))
 
-            # Special fields evaluated at each frame
-            for field in self.template['fields']:
-                if field['name'] == 'frame_number' and not 'frame_number' in self.data:
-                    image_data['frame_number'] = image_number
-                if (field['name'] == 'normalized_frame_number'
-                        and not 'normalized_frame_number' in self.data):
-                    image_data['normalized_frame_number'] = i - self.data['offset'] + 1
-                if field['name'] in self.data and type(self.data[field['name']]) is dict:
-                    image_data[field['name']] = self.data[field['name']][image_number]
+                # Special fields evaluated at each frame
+                for field in self.template['fields']:
+                    if field['name'] == 'frame_number' and not 'frame_number' in self.data:
+                        image_data['frame_number'] = image_number
+                    if (field['name'] == 'normalized_frame_number'
+                            and not 'normalized_frame_number' in self.data):
+                        image_data['normalized_frame_number'] = i - self.data['offset'] + 1
+                    if field['name'] in self.data and type(self.data[field['name']]) is dict:
+                        image_data[field['name']] = self.data[field['name']][image_number]
 
-            self.mark_image(image_source, image_marked, image_data)
+                executor.submit(self.mark_image, image_source, image_marked, image_data.copy())
 
         # Return last image path
         return image_marked
@@ -224,6 +225,8 @@ class SequenceMarker():
     def mark_image(self, path, output_path, image_data):
         '''Use ImageMagick's convert command line utility to overlay metadata on
         specified image'''
+        print("Marking image %s..." % image_data['frame_number'])
+
         convert_bin = bins[platform.system()]['convert']
         convert_args = [convert_bin]
         convert_args += ['%s' % path]
