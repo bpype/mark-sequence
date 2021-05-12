@@ -29,7 +29,6 @@ bl_info = {
 
 
 import bpy
-from bpy_extras.io_utils import ExportHelper
 import os
 import tempfile
 from time import time
@@ -55,17 +54,18 @@ def find_region_3d(context):
     return None
 
 
-class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
+class LFS_OT_Playblast(bpy.types.Operator):
     '''Group multiple plane layers from current camera into one'''
     bl_idname = "lfs.playblast"
     bl_label = "Playblast"
     bl_options = {'REGISTER', 'PRESET'}
 
+    filepath: bpy.props.StringProperty(maxlen=1024, subtype='FILE_PATH',
+                             options={'HIDDEN', 'SKIP_SAVE'})
     filename_ext = ".mov"
     filter_glob: bpy.props.StringProperty(
         default="*.mov",
-        options={'HIDDEN'},
-    )
+        options={'HIDDEN'})
 
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
     do_hide_overlays: bpy.props.BoolProperty(name="Hide Overlays", description="Hide overlays in the viewport preview", default=True)
@@ -77,6 +77,10 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
     scene: bpy.props.StringProperty(name="Shot", description="Shot number")
     version: bpy.props.StringProperty(name="Version", description="Version of the shot")
+
+    def invoke(self, context, _event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
     def execute(self, context):
         start_time = time()
