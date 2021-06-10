@@ -101,9 +101,10 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_simplify = render.use_simplify
             orig_simplify_subdivision = render.simplify_subdivision
             orig_simplify_subdivision_render = render.simplify_subdivision_render
-            orig_overlay = space.overlay.show_overlays
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
+            if space is not None:
+                orig_overlay = space.overlay.show_overlays
 
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
@@ -113,10 +114,10 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_simplify = self.do_simplify
             render.simplify_subdivision = 0
             render.simplify_subdivision_render = 0
-            if self.do_hide_overlays:
-                space.overlay.show_overlays = False
             context.scene.eevee.taa_render_samples = 4
             context.scene.eevee.taa_samples = 4
+            if self.do_hide_overlays and space is not None:
+                space.overlay.show_overlays = False
 
             out_name = self.filepath
             dir_path = os.path.dirname(out_name)
@@ -205,9 +206,10 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_simplify = orig_simplify
             render.simplify_subdivision = orig_simplify_subdivision
             render.simplify_subdivision_render = orig_simplify_subdivision_render
-            space.overlay.show_overlays = orig_overlay
             context.scene.eevee.taa_render_samples = orig_taa_render_samples
             context.scene.eevee.taa_samples = orig_taa_samples
+            if space is not None:
+                space.overlay.show_overlays = orig_overlay
 
             print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
