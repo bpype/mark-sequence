@@ -71,6 +71,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     do_hide_overlays: bpy.props.BoolProperty(name="Hide Overlays", description="Hide overlays in the viewport preview", default=True)
     do_export_audio: bpy.props.BoolProperty(name="Export Audio", description="Export the audio from the VSE as audio track", default=True)
     do_simplify: bpy.props.BoolProperty(name="Simplify", description="Enable mesh simplification from the render settings", default=False)
+    do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -105,6 +106,10 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_taa_samples = context.scene.eevee.taa_samples
             if space is not None:
                 orig_overlay = space.overlay.show_overlays
+            view_layer_visibilities = {}
+            if self.do_render and self.do_single_layer:
+                for layer in context.scene.view_layers:
+                    view_layer_visibilities[layer.name] = layer.use
 
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
@@ -118,6 +123,12 @@ class LFS_OT_Playblast(bpy.types.Operator):
             context.scene.eevee.taa_samples = 4
             if self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
+            if self.do_render and self.do_single_layer:
+                for layer in context.scene.view_layers:
+                    if "View Layer" in context.scene.view_layers:
+                        layer.use = (layer.name == 'View Layer')
+                    else:
+                        layer.use = (layer == context.view_layer)
 
             out_name = self.filepath
             dir_path = os.path.dirname(out_name)
@@ -210,6 +221,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
             context.scene.eevee.taa_samples = orig_taa_samples
             if space is not None:
                 space.overlay.show_overlays = orig_overlay
+            if self.do_render and self.do_single_layer:
+                for layer in context.scene.view_layers:
+                    layer.use = view_layer_visibilities[layer.name]
 
             print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
@@ -218,6 +232,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
         layout = self.layout
         col = layout.column()
         col.prop(self, "do_render")
+        row = col.row()
+        row.active = self.do_render
+        row.prop(self, "do_single_layer")
         col.prop(self, "do_hide_overlays")
         col.prop(self, "do_simplify")
         col.prop(self, "do_export_audio")
