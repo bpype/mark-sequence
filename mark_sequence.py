@@ -186,16 +186,16 @@ class SequenceMarker():
         # Special fields: for each special field, give a default if it is
         # specified in the template but not passed as data
         for field in self.template['fields']:
-            if field['name'] == 'date' and not 'date' in self.data:
+            if field['name'] == 'date':
                 import datetime
                 image_data['date'] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
-            if field['name'] == 'user' and not 'user' in self.data:
+            if field['name'] == 'user':
                 import getpass
                 image_data['user'] = getpass.getuser()
-            if field['name'] == 'hostname' and not 'hostname' in self.data:
+            if field['name'] == 'hostname':
                 import platform
                 image_data['hostname'] = platform.node()
-            if field['name'] == 'total_images' and not 'total_images' in self.data :
+            if field['name'] == 'total_images':
                 image_data['total_images'] = len(self.frame_set)
 
         with ThreadPoolExecutor() as executor:
@@ -209,10 +209,9 @@ class SequenceMarker():
 
                 # Special fields evaluated at each frame
                 for field in self.template['fields']:
-                    if field['name'] == 'frame_number' and not 'frame_number' in self.data:
+                    if field['name'] == 'frame_number':
                         image_data['frame_number'] = image_number
-                    if (field['name'] == 'normalized_frame_number'
-                            and not 'normalized_frame_number' in self.data):
+                    if field['name'] == 'normalized_frame_number':
                         image_data['normalized_frame_number'] = i - self.data['offset'] + 1
                     if field['name'] in self.data and type(self.data[field['name']]) is dict:
                         image_data[field['name']] = self.data[field['name']][image_number]
@@ -252,7 +251,8 @@ class SequenceMarker():
             # Try formatting the string with the value from the passed data
             try:
                 value %= image_data[field['name']]
-            except KeyError:
+            except BaseException as e:
+                print(f"Could not evaluate field {field['name']}: {e}")
                 continue
             if not direction in directions:
                 directions[direction] = ''
