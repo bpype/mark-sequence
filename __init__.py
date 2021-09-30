@@ -104,6 +104,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_simplify_subdivision_render = render.simplify_subdivision_render
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
+            orig_gl_texture_limit = context.preferences.system.gl_texture_limit
             if space is not None:
                 orig_overlay = space.overlay.show_overlays
             view_layer_visibilities = {}
@@ -121,6 +122,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.simplify_subdivision_render = 0
             context.scene.eevee.taa_render_samples = 4
             context.scene.eevee.taa_samples = 4
+            context.preferences.system.gl_texture_limit = "CLAMP_OFF"
             if self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
             if self.do_render and self.do_single_layer:
@@ -219,6 +221,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.simplify_subdivision_render = orig_simplify_subdivision_render
             context.scene.eevee.taa_render_samples = orig_taa_render_samples
             context.scene.eevee.taa_samples = orig_taa_samples
+            context.preferences.system.gl_texture_limit = orig_gl_texture_limit
             if space is not None:
                 space.overlay.show_overlays = orig_overlay
             if self.do_render and self.do_single_layer:
