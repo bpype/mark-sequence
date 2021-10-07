@@ -122,7 +122,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.simplify_subdivision_render = 0
             context.scene.eevee.taa_render_samples = 16
             context.scene.eevee.taa_samples = 16
-            context.preferences.system.gl_texture_limit = "CLAMP_OFF"
+            if not self.do_simplify:
+                context.preferences.system.gl_texture_limit = "CLAMP_OFF"
             if self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
             if self.do_render and self.do_single_layer:
