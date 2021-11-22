@@ -54,6 +54,39 @@ def find_region_3d(context):
     return None
 
 
+def proxify(img, target_width):
+    if 'is_proxy' in img:
+        if img['is_proxy'] and img.size[0] != target_width:
+            deproxify(img)
+        else:
+            return
+
+    img['is_proxy'] = True
+
+    dest = target_width
+    w, h = img.size
+    h *= dest / w
+    w = dest
+    img.scale(w, h)
+    img.gl_free()  # Force image update?
+
+
+def proxify_images(context, target_width):
+    images_to_process = {img for img in bpy.data.images if img.source in {'TILED', 'FILE'} and img.size[0] > target_width}
+
+    number_imgs = len(images_to_process)
+    context.window_manager.progress_begin(1, number_imgs)
+
+    for i, img in enumerate(images_to_process):
+        print("Proxy: processing image {:03} of {:03} : {}".format(
+            i + 1, number_imgs, img.name))
+        context.window_manager.progress_update(i + 1)
+        proxify(img, target_width)
+
+    print("Proxy: done.")
+    context.window_manager.progress_end()
+
+
 class LFS_OT_Playblast(bpy.types.Operator):
     '''Group multiple plane layers from current camera into one'''
     bl_idname = "lfs.playblast"
@@ -72,6 +105,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
     do_export_audio: bpy.props.BoolProperty(name="Export Audio", description="Export the audio from the VSE as audio track", default=True)
     do_simplify: bpy.props.BoolProperty(name="Simplify", description="Enable mesh simplification from the render settings", default=False)
     do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
+    do_reduce_textures: bpy.props.BoolProperty(name="Reduce Textures", description="Reduce texture sizes before render, to reduce memory footprint", default=False)
+    target_texture_width: bpy.props.IntProperty(name="Target Texture Width", description="Reduce textures greater than this width, to this width", default=4096)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -93,6 +128,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 region_3d = space.region_3d
             else:
                 region_3d = find_region_3d(context)
+
+            # Reduce texture sizes
+            if self.do_reduce_textures:
+                print("Reducing textures")
+                proxify_images(context, self.target_texture_width)
 
             # Store original render settings
             orig_filepath = render.filepath
@@ -241,6 +281,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         row.prop(self, "do_single_layer")
         col.prop(self, "do_hide_overlays")
         col.prop(self, "do_simplify")
+        col.prop(self, "do_reduce_textures")
         col.prop(self, "do_export_audio")
 
         col = layout.column(align=True)
