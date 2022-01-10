@@ -139,6 +139,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_use_file_extension = render.use_file_extension
             orig_file_format = render.image_settings.file_format
             orig_color_depth = render.image_settings.color_depth
+            orig_resolution_percentage = render.resolution_percentage
             orig_simplify = render.use_simplify
             orig_simplify_subdivision = render.simplify_subdivision
             orig_simplify_subdivision_render = render.simplify_subdivision_render
@@ -154,6 +155,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
+            render.resolution_percentage = 100
             render.use_file_extension = True
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
@@ -257,6 +259,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_file_extension = orig_use_file_extension
             render.image_settings.file_format = orig_file_format
             render.image_settings.color_depth = orig_color_depth
+            render.resolution_percentage = orig_resolution_percentage
             render.use_simplify = orig_simplify
             render.simplify_subdivision = orig_simplify_subdivision
             render.simplify_subdivision_render = orig_simplify_subdivision_render
