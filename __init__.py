@@ -107,6 +107,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
     do_reduce_textures: bpy.props.BoolProperty(name="Reduce Textures", description="Reduce texture sizes before render, to reduce memory footprint", default=False)
     target_texture_width: bpy.props.IntProperty(name="Target Texture Width", description="Reduce textures greater than this width, to this width", default=4096)
+    resolution_percentage: bpy.props.IntProperty(name="Resolution Percentage", description="Scale the render resolution according to this percentage", default=100)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -159,6 +160,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_file_extension = True
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
+            render.resolution_percentage = self.resolution_percentage
             render.use_simplify = self.do_simplify
             render.simplify_subdivision = 0
             render.simplify_subdivision_render = 0
@@ -286,6 +288,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         col.prop(self, "do_simplify")
         col.prop(self, "do_reduce_textures")
         col.prop(self, "do_export_audio")
+        col.prop(self, "resolution_percentage")
 
         col = layout.column(align=True)
         col.prop(self, "studio")
