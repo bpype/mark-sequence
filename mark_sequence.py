@@ -104,11 +104,6 @@ default_template = {
             "string": " %s "
         },
         {
-            "name": "simplify",
-            "direction": "SouthWest",
-            "string": " %s "
-        },
-        {
             "name": "focal_length",
             "direction": "SouthWest",
             "string": " Focal length: %d mm "

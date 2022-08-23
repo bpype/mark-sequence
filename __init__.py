@@ -103,7 +103,10 @@ class LFS_OT_Playblast(bpy.types.Operator):
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
     do_hide_overlays: bpy.props.BoolProperty(name="Hide Overlays", description="Hide overlays in the viewport preview", default=True)
     do_export_audio: bpy.props.BoolProperty(name="Export Audio", description="Export the audio from the VSE as audio track", default=True)
-    do_simplify: bpy.props.BoolProperty(name="Simplify", description="Enable mesh simplification from the render settings", default=False)
+    quality: bpy.props.EnumProperty(name="Quality", items=(('PREVIEW', "Preview", ""),
+                                                           ('FINAL', "Final", "")),
+                                    description="Use quality presets for the render settings", default='FINAL')
+
     do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
     do_reduce_textures: bpy.props.BoolProperty(name="Reduce Textures", description="Reduce texture sizes before render, to reduce memory footprint", default=False)
     target_texture_width: bpy.props.IntProperty(name="Target Texture Width", description="Reduce textures greater than this width, to this width", default=4096)
@@ -144,8 +147,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_simplify = render.use_simplify
             orig_simplify_subdivision = render.simplify_subdivision
             orig_simplify_subdivision_render = render.simplify_subdivision_render
-            orig_taa_render_samples = context.scene.eevee.taa_render_samples
-            orig_taa_samples = context.scene.eevee.taa_samples
+            # orig_taa_render_samples = context.scene.eevee.taa_render_samples
+            # orig_taa_samples = context.scene.eevee.taa_samples
+            
+            # TODO: Store workbench settings in preview quality mode
+
             orig_gl_texture_limit = context.preferences.system.gl_texture_limit
             if space is not None:
                 orig_overlay = space.overlay.show_overlays
@@ -161,13 +167,39 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.image_settings.file_format = 'TIFF'
             render.image_settings.color_depth = '8'
             render.resolution_percentage = self.resolution_percentage
-            render.use_simplify = self.do_simplify
-            render.simplify_subdivision = 0
-            render.simplify_subdivision_render = 0
-            context.scene.eevee.taa_render_samples = (4 if self.do_simplify else 16)
-            context.scene.eevee.taa_samples = (4 if self.do_simplify else 16)
-            if not self.do_simplify:
-                context.preferences.system.gl_texture_limit = "CLAMP_OFF"
+            render.use_simplify = (self.quality == 'PREVIEW')
+            render.simplify_subdivision = 1
+            render.simplify_subdivision_render = 1
+            render.simplify_child_particles_render = 0.0
+
+            if self.quality == 'PREVIEW':
+                render.engine = 'BLENDER_WORKBENCH'
+                # context.scene.shading.color_type = "MATERIAL"
+                # context.scene.shading.show_cavity = True
+                render.film_transparent = True
+                render.use_compositing = True
+                render.use_sequencer = False
+                
+                # Clear existing tree
+                tree = context.scene.node_tree
+                tree.nodes.clear()
+
+                # Build compositing node tree
+                node_bg_image = tree.nodes.new("CompositorNodeImage")
+                node_rlayers = tree.nodes.new("CompositorNodeRLayers")
+                node_alpha_over = tree.nodes.new("CompositorNodeAlphaOver")
+                node_composite = tree.nodes.new("CompositorNodeComposite")
+                node_composite.use_alpha = True
+
+                tree.links.new(node_bg_image.outputs['Image'], node_alpha_over.inputs[1], verify_limits=True)
+                tree.links.new(node_rlayers.outputs['Image'], node_alpha_over.inputs[2], verify_limits=True)
+                tree.links.new(node_alpha_over.outputs['Image'], node_composite.inputs[0], verify_limits=True)
+
+            # context.scene.eevee.taa_render_samples = (4 if self.do_simplify else 16)
+            # context.scene.eevee.taa_samples = (4 if self.do_simplify else 16)
+            # if not self.do_simplify:
+            #     context.preferences.system.gl_texture_limit = "CLAMP_OFF"
+
             if self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
             if self.do_render and self.do_single_layer:
@@ -219,7 +251,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     "file_name": os.path.basename(bpy.data.filepath),
                     "audio_file": None,
                     "frame_rate": render.fps / render.fps_base,
-                    "simplify": "Simplify " + ("ON" if self.do_simplify else "off")
+                    "quality": "Quality: " + self.quality
             }
 
             # Get data from environment variables
@@ -265,8 +297,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_simplify = orig_simplify
             render.simplify_subdivision = orig_simplify_subdivision
             render.simplify_subdivision_render = orig_simplify_subdivision_render
-            context.scene.eevee.taa_render_samples = orig_taa_render_samples
-            context.scene.eevee.taa_samples = orig_taa_samples
+            # context.scene.eevee.taa_render_samples = orig_taa_render_samples
+            # context.scene.eevee.taa_samples = orig_taa_samples
             context.preferences.system.gl_texture_limit = orig_gl_texture_limit
             if space is not None:
                 space.overlay.show_overlays = orig_overlay
@@ -285,7 +317,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
         row.active = self.do_render
         row.prop(self, "do_single_layer")
         col.prop(self, "do_hide_overlays")
-        col.prop(self, "do_simplify")
+        # col.prop(self, "do_simplify")
+        col.prop(self, "quality")
         col.prop(self, "do_reduce_textures")
         col.prop(self, "do_export_audio")
         col.prop(self, "resolution_percentage")
@@ -300,7 +333,6 @@ class LFS_OT_Playblast(bpy.types.Operator):
     # TODO execute marking in modal in background?
     # def modal(self, context):
     #     return {'FINISHED'}
-
 
 def playblast_button(self, context):
     row = self.layout.row()
