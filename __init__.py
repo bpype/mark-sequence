@@ -188,6 +188,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 space.shading.type = 'MATERIAL'
                 # Disable overlays
                 space.overlay.show_overlays = True
+                space.overlay.show_ortho_grid = False
+                space.overlay.show_floor = False
+                space.overlay.show_axis_x = False
+                space.overlay.show_axis_y = False
+                space.overlay.show_axis_z = False
                 space.overlay.show_cursor = False
                 space.overlay.show_extras = False
                 space.overlay.show_bones = False
@@ -195,6 +200,13 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 space.overlay.show_motion_paths = False
                 space.overlay.show_outline_selected = False
                 space.overlay.show_object_origins = False
+                # Configure camera background image
+                context.scene.camera.data.show_background_images = True
+                if len(context.scene.camera.data.background_images) > 0:
+                    img = context.scene.camera.data.background_images[0]
+                    img.alpha = 1.0
+                    img.display_depth = 'BACK'
+                    img.frame_method = 'STRETCH'
 
                 # Transfer render visibility to viewport visibility
                 for c in bpy.data.collections:
