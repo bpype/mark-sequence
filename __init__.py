@@ -147,18 +147,26 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_simplify = render.use_simplify
             orig_simplify_subdivision = render.simplify_subdivision
             orig_simplify_subdivision_render = render.simplify_subdivision_render
-            # orig_taa_render_samples = context.scene.eevee.taa_render_samples
-            # orig_taa_samples = context.scene.eevee.taa_samples
-            
+            orig_taa_render_samples = context.scene.eevee.taa_render_samples
+            orig_taa_samples = context.scene.eevee.taa_samples
+
             # TODO: Store workbench settings in preview quality mode
 
             orig_gl_texture_limit = context.preferences.system.gl_texture_limit
             if space is not None:
                 orig_overlay = space.overlay.show_overlays
             view_layer_visibilities = {}
-            if self.do_render and self.do_single_layer:
-                for layer in context.scene.view_layers:
-                    view_layer_visibilities[layer.name] = layer.use
+            collection_viewport_visibility = {}
+            object_viewport_visibility = {}
+            if self.do_render:
+                if self.do_single_layer:
+                    for layer in context.scene.view_layers:
+                        view_layer_visibilities[layer.name] = layer.use
+            else:
+                for c in bpy.data.collections:
+                    collection_viewport_visibility[c.name] = c.hide_viewport
+                for o in bpy.data.objects:
+                    object_viewport_visibility[o.name] = o.hide_viewport
 
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
@@ -173,34 +181,31 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.simplify_child_particles_render = 0.0
 
             if self.quality == 'PREVIEW':
-                render.engine = 'BLENDER_WORKBENCH'
-                # context.scene.shading.color_type = "MATERIAL"
-                # context.scene.shading.show_cavity = True
-                render.film_transparent = True
-                render.use_compositing = True
-                render.use_sequencer = False
-                
-                # Clear existing tree
-                tree = context.scene.node_tree
-                tree.nodes.clear()
+                render.engine = 'BLENDER_EEVEE'
+                # Take camera's point of view
+                space.region_3d.view_perspective = 'CAMERA'
+                # Set shading to material preview
+                space.shading.type = 'MATERIAL'
+                # Disable overlays
+                space.overlay.show_overlays = True
+                space.overlay.show_cursor = False
+                space.overlay.show_extras = False
+                space.overlay.show_bones = False
+                space.overlay.show_relationship_lines = False
+                space.overlay.show_motion_paths = False
+                space.overlay.show_outline_selected = False
+                space.overlay.show_object_origins = False
 
-                # Build compositing node tree
-                node_bg_image = tree.nodes.new("CompositorNodeImage")
-                node_rlayers = tree.nodes.new("CompositorNodeRLayers")
-                node_alpha_over = tree.nodes.new("CompositorNodeAlphaOver")
-                node_composite = tree.nodes.new("CompositorNodeComposite")
-                node_composite.use_alpha = True
+                # Transfer render visibility to viewport visibility
+                for c in bpy.data.collections:
+                    c.hide_viewport = c.hide_render
+                for o in bpy.data.objects:
+                    o.hide_viewport = o.hide_render
 
-                tree.links.new(node_bg_image.outputs['Image'], node_alpha_over.inputs[1], verify_limits=True)
-                tree.links.new(node_rlayers.outputs['Image'], node_alpha_over.inputs[2], verify_limits=True)
-                tree.links.new(node_alpha_over.outputs['Image'], node_composite.inputs[0], verify_limits=True)
+                # Use a low number of samples
+                context.scene.eevee.taa_samples = 4
 
-            # context.scene.eevee.taa_render_samples = (4 if self.do_simplify else 16)
-            # context.scene.eevee.taa_samples = (4 if self.do_simplify else 16)
-            # if not self.do_simplify:
-            #     context.preferences.system.gl_texture_limit = "CLAMP_OFF"
-
-            if self.do_hide_overlays and space is not None:
+            if self.do_render and self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
             if self.do_render and self.do_single_layer:
                 for layer in context.scene.view_layers:
@@ -297,14 +302,20 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.use_simplify = orig_simplify
             render.simplify_subdivision = orig_simplify_subdivision
             render.simplify_subdivision_render = orig_simplify_subdivision_render
-            # context.scene.eevee.taa_render_samples = orig_taa_render_samples
-            # context.scene.eevee.taa_samples = orig_taa_samples
+            context.scene.eevee.taa_render_samples = orig_taa_render_samples
+            context.scene.eevee.taa_samples = orig_taa_samples
             context.preferences.system.gl_texture_limit = orig_gl_texture_limit
-            if space is not None:
+            if self.do_render and space is not None:
                 space.overlay.show_overlays = orig_overlay
-            if self.do_render and self.do_single_layer:
-                for layer in context.scene.view_layers:
-                    layer.use = view_layer_visibilities[layer.name]
+            if self.do_render:
+                if self.do_single_layer:
+                    for layer in context.scene.view_layers:
+                        layer.use = view_layer_visibilities[layer.name]
+            else:
+                for c in bpy.data.collections:
+                    c.hide_viewport = collection_viewport_visibility[c.name]
+                for o in bpy.data.objects:
+                    o.hide_viewport = object_viewport_visibility[o.name]
 
             print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
