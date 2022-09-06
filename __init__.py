@@ -37,13 +37,13 @@ from .mark_sequence import SequenceMarker
 
 
 
-def find_space(context):
-    if (context.space_data is not None
-            and context.space_data.type == 'VIEW_3D'):
-        return context.space_data
+def find_area(context):
+    if (context.area is not None
+            and context.area.type == 'VIEW_3D'):
+        return context.area
     for area in context.screen.areas:
         if area.type == 'VIEW_3D':
-            return area.spaces[0]
+            return area
     return None
 
 
@@ -126,7 +126,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
         start_time = time()
         with tempfile.TemporaryDirectory() as tmpdir:
             render = context.scene.render
-            space = find_space(context)
+            area = find_area(context)
+            space = area.spaces[0]
 
             if hasattr(space, 'region_3d'):
                 region_3d = space.region_3d
@@ -284,7 +285,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 bpy.ops.render.render(animation=True)
             else:
                 # bpy.ops.render.opengl(animation=True, view_context=False)
-                bpy.ops.render.opengl(animation=True)
+                with bpy.context.temp_override(area=area):
+                    bpy.ops.render.opengl(animation=True)
 
             # Export Audio if needed
             if self.do_export_audio:
