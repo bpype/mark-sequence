@@ -138,6 +138,19 @@ default_template = {
     ]
 }
 
+
+def frames_to_timecode(frames, fps=24):
+    '''
+    Adapted from github hist:
+    https://gist.github.com/schiffty/c838db504b9a1a7c23a30c366e8005e8
+    '''
+    # h = int(frames / 86400) 
+    m = int(frames / 1440) % 60 
+    s = int((frames % 1440)/fps) 
+    f = frames % 1440 % fps
+    return ( "%02d:%02d:%02d" % ( m, s, f))
+
+
 class SequenceMarker():
     def __init__(self, image_filepath, data, template=default_template):
         self.data = data
@@ -192,6 +205,8 @@ class SequenceMarker():
                 image_data['hostname'] = platform.node()
             if field['name'] == 'total_images':
                 image_data['total_images'] = len(self.frame_set)
+            if field['name'] == 'total_tc':
+                image_data['total_tc'] = frames_to_timecode(len(self.frame_set))
 
         with ThreadPoolExecutor() as executor:
             for i, image_number in enumerate(self.frame_set):
@@ -208,6 +223,8 @@ class SequenceMarker():
                         image_data['frame_number'] = image_number
                     if field['name'] == 'normalized_frame_number':
                         image_data['normalized_frame_number'] = i - self.data['offset'] + 1
+                    if field['name'] == 'tc':
+                        image_data['tc'] = frames_to_timecode(i - self.data['offset'] + 1, self.data["frame_rate"])
                     if field['name'] in self.data and type(self.data[field['name']]) is dict:
                         image_data[field['name']] = self.data[field['name']][image_number]
 
