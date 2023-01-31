@@ -244,15 +244,6 @@ class SequenceMarker():
 
         settings = self.template['settings']
 
-        # Add gray band overlay
-        convert_args.extend(['-fill', 'rgba(0,0,0,0.5)'])
-        convert_args.extend(['-draw', 'rectangle 0,0 %s,%s' % (image_data['resolution_x'],
-                                                               settings['font_size'])])
-        convert_args.extend(['-draw', 'rectangle 0,%s %s,%s' % (image_data['resolution_y'] -
-                                                                settings['font_size'] - 2,
-                                                                image_data['resolution_x'],
-                                                                image_data['resolution_y'])])
-
         directions = {}
 
         # Add annotations for each field to the list of directions
