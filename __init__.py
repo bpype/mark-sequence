@@ -31,6 +31,7 @@ bl_info = {
 import bpy
 import os
 import tempfile
+import json
 from time import time
 
 from .mark_sequence import SequenceMarker
@@ -78,6 +79,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
     scene: bpy.props.StringProperty(name="Shot", description="Shot number")
     version: bpy.props.StringProperty(name="Version", description="Version of the shot")
+    
+    template_path: bpy.props.StringProperty(name="Template", description="Custom marking field template", maxlen=1024)
 
     def invoke(self, context, _event):
         context.window_manager.fileselect_add(self)
@@ -186,6 +189,13 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 elif field in os.environ:
                     data[field] = os.environ[field]
 
+            # Load in template from supplied json file. If none given, use default one.
+            if self.template_path is None:
+                template = None
+            else:
+                with open(os.path.abspath(self.template_path), 'r') as f:
+                    template = json.load(f)
+
             # Render animation from viewport
             if self.do_render:
                 bpy.ops.render.render(animation=True)
@@ -209,7 +219,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             # Start sequence marker and movie creation
 
             sequence_marker = SequenceMarker(os.path.join(tmpdir, "tmp_image.0000.tif"),
-                                             data)
+                                             data, template)
             sequence_marker.mark_sequence()
 
             # Restore original render settings
@@ -249,6 +259,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         col.prop(self, "sequence")
         col.prop(self, "scene")
         col.prop(self, "version")
+        col.prop(self, "template_path")
 
     # TODO execute marking in modal in background?
     # def modal(self, context):
