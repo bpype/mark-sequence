@@ -264,6 +264,7 @@ class SequenceMarker():
         # Set text color and size for outside stroke
         convert_args.extend(['-fill', 'black', '-strokewidth', '3',
                              '-stroke', 'black', '-weight', 'bold',
+                             '-font', os.path.join(os.path.dirname(__file__), 'data/fonts/LiberationMono-Regular.ttf'),
                              '-pointsize', str(settings['font_size'])])
 
         # Add annotations for each field, for outside stroke
