@@ -172,6 +172,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 for o in bpy.data.objects:
                     object_viewport_visibility[o.name] = o.hide_viewport
 
+            orig_use_stamp = context.scene.render.use_stamp
+
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
             render.resolution_percentage = 100
@@ -220,6 +222,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
                 # Use a low number of samples
                 context.scene.eevee.taa_samples = 4
+
+            # Disable metadata burning
+            context.scene.render.use_stamp = False
 
             if self.do_render and self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
@@ -340,6 +345,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     c.hide_viewport = collection_viewport_visibility[c.name]
                 for o in bpy.data.objects:
                     o.hide_viewport = object_viewport_visibility[o.name]
+
+            context.scene.render.use_stamp = orig_use_stamp
 
             print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
