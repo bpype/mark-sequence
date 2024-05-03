@@ -1,4 +1,4 @@
-# Mark sequence, copyright (C) 2020 Les Fées Spéciales
+# Mark sequence, copyright (C) 2020-2024 Les Fées Spéciales
 # voeu@les-fees-speciales.coop
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 bl_info = {
     "name": "LFS Playblast",
     "author": "Les Fées Spéciales",
-    "version": (1, 0, 2),
+    "version": (1, 1, 0),
     "blender": (2, 80, 0),
     "location": "View3D > View Menu",
     "description": "Playblast with right info",
@@ -52,6 +52,16 @@ def find_region_3d(context):
     for area in context.screen.areas:
         if area.type == 'VIEW_3D':
             return area.spaces[0].region_3d
+    return None
+
+
+def find_space(context):
+    if (context.space_data is not None
+            and context.space_data.type == 'VIEW_3D'):
+        return context.space_data
+    for area in context.screen.areas:
+        if area.type == 'VIEW_3D':
+            return area.spaces[0]
     return None
 
 
@@ -118,7 +128,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
     scene: bpy.props.StringProperty(name="Shot", description="Shot number")
     version: bpy.props.StringProperty(name="Version", description="Version of the shot")
-    
+
     template_path: bpy.props.StringProperty(name="Template", description="Custom marking field template", maxlen=1024)
 
     def invoke(self, context, _event):
@@ -377,17 +387,197 @@ class LFS_OT_Playblast(bpy.types.Operator):
     # def modal(self, context):
     #     return {'FINISHED'}
 
+
+class LFS_OT_Viewport_Playblast(bpy.types.Operator):
+    '''Group multiple plane layers from current camera into one'''
+    bl_idname = "lfs.playblast"
+    bl_label = "Playblast"
+    bl_options = {'REGISTER', 'PRESET'}
+
+    filepath: bpy.props.StringProperty(maxlen=1024, subtype='FILE_PATH',
+                             options={'HIDDEN', 'SKIP_SAVE'})
+    filename_ext = ".mov"
+    filter_glob: bpy.props.StringProperty(
+        default="*.mov",
+        options={'HIDDEN'})
+
+    do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
+    do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
+
+    def invoke(self, context, _event):
+        self.filepath = bpy.data.filepath.replace(".blend", "_movie.mov").replace("_blend", "_movie_mov")
+        os.makedirs(os.path.dirname(os.path.abspath(bpy.path.abspath(self.filepath))), exist_ok=True)
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        render = context.scene.render
+        space = find_space(context)
+
+        if hasattr(space, 'region_3d'):
+            region_3d = space.region_3d
+        else:
+            region_3d = find_region_3d(context)
+
+        overlay_settings = [
+            # 'show_overlays', 'show_extras',
+            'show_annotation', 'show_axis_x', 'show_axis_y',
+            'show_axis_z', 'show_bones', 'show_cursor', 'show_curve_normals',
+            'show_edge_bevel_weight', 'show_edge_crease', 'show_edge_seams',
+            'show_edge_sharp', 'show_edges', 'show_extra_edge_angle',
+            'show_extra_edge_length', 'show_extra_face_angle',
+            'show_extra_face_area', 'show_extra_indices',
+            'show_face_center', 'show_face_normals', 'show_face_orientation',
+            'show_faces', 'show_fade_inactive', 'show_floor',
+            'show_freestyle_edge_marks', 'show_freestyle_face_marks',
+            'show_light_colors', 'show_look_dev', 'show_motion_paths',
+            'show_object_origins', 'show_object_origins_all',
+            'show_onion_skins', 'show_ortho_grid', 'show_outline_selected',
+            'show_paint_wire', 'show_relationship_lines',
+            'show_retopology', 'show_sculpt_curves_cage',
+            'show_sculpt_face_sets', 'show_sculpt_mask', 'show_split_normals',
+            'show_stats', 'show_statvis', 'show_text', 'show_vertex_normals',
+            'show_viewer_attribute', 'show_weight', 'show_wireframes',
+            'show_wpaint_contours', 'show_xray_bone',
+        ]
+
+        show_settings = [
+            # 'show_object_viewport_mesh', 'show_object_viewport_curve',
+            # 'show_object_viewport_curves', 'show_object_viewport_empty',
+            'show_object_viewport_armature', 'show_object_viewport_camera',
+            'show_object_viewport_font', 'show_object_viewport_grease_pencil',
+            'show_object_viewport_lattice', 'show_object_viewport_light',
+            'show_object_viewport_light_probe', 'show_object_viewport_meta',
+            'show_object_viewport_pointcloud', 'show_object_viewport_speaker',
+            'show_object_viewport_surf', 'show_object_viewport_volume',
+        ]
+
+        # Store original render settings
+        orig_filepath = render.filepath
+        orig_use_file_extension = render.use_file_extension
+        orig_file_format = render.image_settings.file_format
+        orig_color_depth = render.image_settings.color_depth
+        orig_simplify = render.use_simplify
+        orig_simplify_subdivision = render.simplify_subdivision
+        orig_simplify_subdivision_render = render.simplify_subdivision_render
+        orig_taa_render_samples = context.scene.eevee.taa_render_samples
+        orig_taa_samples = context.scene.eevee.taa_samples
+        orig_gl_texture_limit = context.preferences.system.gl_texture_limit
+        orig_overlay_settings = {}
+        orig_show_settings = {}
+        if space is not None:
+            orig_shading_light = space.shading.light
+            orig_view_perspective = space.region_3d.view_perspective
+            for setting in overlay_settings:
+                orig_overlay_settings[setting] = getattr(space.overlay, setting)
+            for setting in show_settings:
+                orig_show_settings[setting] = getattr(space, setting)
+
+        # Store original output settings
+        orig_file_format = bpy.context.scene.render.image_settings.file_format
+        orig_color_management = bpy.context.scene.render.image_settings.color_management
+        orig_ffmpeg_format = bpy.context.scene.render.ffmpeg.format
+        orig_ffmpeg_codec = bpy.context.scene.render.ffmpeg.codec
+        orig_ffmpeg_constant_rate_factor = bpy.context.scene.render.ffmpeg.constant_rate_factor
+        orig_ffmpeg_ffmpeg_preset = bpy.context.scene.render.ffmpeg.ffmpeg_preset
+        orig_ffmpeg_audio_codec = bpy.context.scene.render.ffmpeg.audio_codec
+
+        view_layer_visibilities = {}
+        if self.do_render and self.do_single_layer:
+            for layer in context.scene.view_layers:
+                view_layer_visibilities[layer.name] = layer.use
+
+        # Setup render settings
+        render.filepath = self.filepath
+        render.use_file_extension = True
+        render.image_settings.color_depth = '8'
+        render.simplify_subdivision = 0
+        render.simplify_subdivision_render = 0
+        context.scene.eevee.taa_render_samples = 16
+        context.scene.eevee.taa_samples = 16
+        if space is not None:
+            space.shading.light = 'FLAT'
+            space.region_3d.view_perspective = 'CAMERA'
+            for setting in overlay_settings:
+                setattr(space.overlay, setting, False)
+            for setting in show_settings:
+                setattr(space, setting, False)
+        if self.do_render and self.do_single_layer:
+            for layer in context.scene.view_layers:
+                layer.use = (layer == context.view_layer)
+
+        # Setup output settings
+        render.image_settings.file_format = 'FFMPEG'
+        render.image_settings.color_management = 'FOLLOW_SCENE'
+        render.ffmpeg.format = 'QUICKTIME'
+        render.ffmpeg.codec = 'H264'
+        render.ffmpeg.constant_rate_factor = 'PERC_LOSSLESS'
+        render.ffmpeg.ffmpeg_preset = 'GOOD'
+        render.ffmpeg.audio_codec = 'AAC'
+
+        out_name = self.filepath
+        dir_path = os.path.dirname(out_name)
+
+        # Render animation from viewport
+        bpy.ops.render.opengl(animation=True)
+
+        # Run animation playback
+        bpy.ops.render.play_rendered_anim()
+
+        # Restore original render settings
+        render.filepath = orig_filepath
+        render.use_file_extension = orig_use_file_extension
+        render.image_settings.file_format = orig_file_format
+        render.image_settings.color_depth = orig_color_depth
+        render.use_simplify = orig_simplify
+        render.simplify_subdivision = orig_simplify_subdivision
+        render.simplify_subdivision_render = orig_simplify_subdivision_render
+        context.scene.eevee.taa_render_samples = orig_taa_render_samples
+        context.scene.eevee.taa_samples = orig_taa_samples
+        context.preferences.system.gl_texture_limit = orig_gl_texture_limit
+        if space is not None:
+            space.shading.light = orig_shading_light
+            space.region_3d.view_perspective = orig_view_perspective
+            for setting in overlay_settings:
+                setattr(space.overlay, setting, orig_overlay_settings[setting])
+            for setting in show_settings:
+                setattr(space, setting, orig_show_settings[setting])
+        if self.do_render and self.do_single_layer:
+            for layer in context.scene.view_layers:
+                layer.use = view_layer_visibilities[layer.name]
+
+        # Restore original output settings
+        bpy.context.scene.render.image_settings.file_format = orig_file_format
+        bpy.context.scene.render.image_settings.color_management = orig_color_management
+        bpy.context.scene.render.ffmpeg.format = orig_ffmpeg_format
+        bpy.context.scene.render.ffmpeg.codec = orig_ffmpeg_codec
+        bpy.context.scene.render.ffmpeg.constant_rate_factor = orig_ffmpeg_constant_rate_factor
+        bpy.context.scene.render.ffmpeg.ffmpeg_preset = orig_ffmpeg_ffmpeg_preset
+        bpy.context.scene.render.ffmpeg.audio_codec = orig_ffmpeg_audio_codec
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        col = layout.column()
+        col.prop(self, "do_render")
+        row = col.row()
+        row.active = self.do_render
+        row.prop(self, "do_single_layer")
+
+
 def playblast_button(self, context):
     row = self.layout.row()
-    self.layout.operator(LFS_OT_Playblast.bl_idname, text="LFS Playblast", icon="RENDER_ANIMATION")
+    self.layout.operator(LFS_OT_Viewport_Playblast.bl_idname, text="LFS Viewport Playblast", icon="RENDER_ANIMATION")
     self.layout.separator()
 
 def register():
     bpy.utils.register_class(LFS_OT_Playblast)
+    bpy.utils.register_class(LFS_OT_Viewport_Playblast)
     bpy.types.VIEW3D_MT_view.prepend(playblast_button)
 
 def unregister():
     bpy.types.VIEW3D_MT_view.remove(playblast_button)
+    bpy.utils.unregister_class(LFS_OT_Viewport_Playblast)
     bpy.utils.unregister_class(LFS_OT_Playblast)
 
 if __name__ == '__main__':
