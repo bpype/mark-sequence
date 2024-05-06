@@ -84,6 +84,11 @@ default_template = {
             "string": "%s"
         },
         {
+            "name": "tc",
+            "direction": "North",
+            "string": " - %s"
+        },
+        {
             "name": "file_name",
             "direction": "NorthEast",
             "string": " %s "
