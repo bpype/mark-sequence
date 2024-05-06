@@ -389,8 +389,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
 
 class LFS_OT_Viewport_Playblast(bpy.types.Operator):
-    '''Group multiple plane layers from current camera into one'''
-    bl_idname = "lfs.playblast"
+    '''Quick render in the viewport'''
+    bl_idname = "lfs.viewport_playblast"
     bl_label = "Playblast"
     bl_options = {'REGISTER', 'PRESET'}
 
