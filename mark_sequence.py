@@ -109,6 +109,11 @@ default_template = {
             "string": " Focal length: %d mm "
         },
         {
+            "name": "fstop",
+            "direction": "SouthWest",
+            "string": " F-Stop: %s  "
+        },
+        {
             "name": "studio",
             "direction": "SouthEast",
             "string": " %s "
@@ -154,7 +159,7 @@ def frames_to_timecode(frames, fps=24):
 class SequenceMarker():
     def __init__(self, image_filepath, data, template=default_template):
         self.data = data
-        self.template = template
+        self.template = template or default_template
         self.create_temp_dir()
 
         self.file_sequence = fileseq.findSequenceOnDisk(image_filepath)

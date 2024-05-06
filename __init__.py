@@ -254,12 +254,14 @@ class LFS_OT_Playblast(bpy.types.Operator):
             # https://developer.blender.org/T85035
             context.scene.frame_set(context.scene.frame_end)
 
-            # Get animated lens, store it into a dict
+            # Get animated lens and f-stop, store it into a dict
             lens = {}
+            fstop = {}
             previous_frame = context.scene.frame_current
             for f in range(context.scene.frame_start, context.scene.frame_end+1):
                 context.scene.frame_set(f)
                 # Focal length is dependent upon 3D view state
+                fstop[f] = f"{context.scene.camera.data.dof.aperture_fstop:.3}"
                 if self.do_render:
                     lens[f] = context.scene.camera.data.lens
                 else:
@@ -284,6 +286,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
                                              render.resolution_y * render.resolution_percentage // 100),
                     "focal_length": lens,
+                    "fstop": fstop,
                     "file_name": os.path.basename(bpy.data.filepath),
                     "audio_file": None,
                     "frame_rate": render.fps / render.fps_base,
@@ -299,11 +302,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     data[field] = os.environ[field]
 
             # Load in template from supplied json file. If none given, use default one.
-            if self.template_path is None:
-                template = None
-            else:
+            if self.template_path:
                 with open(os.path.abspath(self.template_path), 'r') as f:
                     template = json.load(f)
+            else:
+                template = None
 
             # Render animation from viewport
             if self.do_render:
