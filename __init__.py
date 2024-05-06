@@ -403,6 +403,12 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
 
     do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
     do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
+    check_existing: bpy.props.BoolProperty(
+        name="Check Existing",
+        description="Check and warn on overwriting existing files",
+        default=True,
+        options={'HIDDEN'},
+    )
 
     def invoke(self, context, _event):
         self.filepath = bpy.data.filepath.replace(".blend", "_movie.mov").replace("_blend", "_movie_mov")
