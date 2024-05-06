@@ -19,7 +19,7 @@
 bl_info = {
     "name": "LFS Playblast",
     "author": "Les Fées Spéciales",
-    "version": (1, 1, 0),
+    "version": (1, 2, 0),
     "blender": (2, 80, 0),
     "location": "View3D > View Menu",
     "description": "Playblast with right info",
@@ -394,7 +394,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
 class LFS_OT_Viewport_Playblast(bpy.types.Operator):
     '''Quick render in the viewport'''
     bl_idname = "lfs.viewport_playblast"
-    bl_label = "Playblast"
+    bl_label = "Viewport Playblast"
     bl_options = {'REGISTER', 'PRESET'}
 
     filepath: bpy.props.StringProperty(maxlen=1024, subtype='FILE_PATH',
@@ -412,6 +412,10 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         default=True,
         options={'HIDDEN'},
     )
+
+    @staticmethod
+    def update(scene):
+        scene.render.stamp_note_text = f"F-Stop: {scene.camera.data.dof.aperture_fstop:3.3}"
 
     def invoke(self, context, _event):
         self.filepath = bpy.data.filepath.replace(".blend", "_movie.mov").replace("_blend", "_movie_mov")
@@ -482,6 +486,9 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
             for setting in show_settings:
                 orig_show_settings[setting] = getattr(space, setting)
 
+        orig_use_stamp = render.use_stamp
+        orig_stamp_note_text = render.stamp_note_text
+
         # Store original output settings
         orig_file_format = bpy.context.scene.render.image_settings.file_format
         orig_color_management = bpy.context.scene.render.image_settings.color_management
@@ -523,12 +530,17 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         render.ffmpeg.constant_rate_factor = 'PERC_LOSSLESS'
         render.ffmpeg.ffmpeg_preset = 'GOOD'
         render.ffmpeg.audio_codec = 'AAC'
+        render.use_stamp = True
 
         out_name = self.filepath
         dir_path = os.path.dirname(out_name)
 
+        bpy.app.handlers.frame_change_pre.append(self.update)
+
         # Render animation from viewport
         bpy.ops.render.opengl(animation=True)
+
+        bpy.app.handlers.frame_change_pre.remove(self.update)
 
         # Run animation playback
         bpy.ops.render.play_rendered_anim()
@@ -556,13 +568,17 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
                 layer.use = view_layer_visibilities[layer.name]
 
         # Restore original output settings
-        bpy.context.scene.render.image_settings.file_format = orig_file_format
-        bpy.context.scene.render.image_settings.color_management = orig_color_management
-        bpy.context.scene.render.ffmpeg.format = orig_ffmpeg_format
-        bpy.context.scene.render.ffmpeg.codec = orig_ffmpeg_codec
-        bpy.context.scene.render.ffmpeg.constant_rate_factor = orig_ffmpeg_constant_rate_factor
-        bpy.context.scene.render.ffmpeg.ffmpeg_preset = orig_ffmpeg_ffmpeg_preset
-        bpy.context.scene.render.ffmpeg.audio_codec = orig_ffmpeg_audio_codec
+        render.image_settings.file_format = orig_file_format
+        render.image_settings.color_management = orig_color_management
+        render.ffmpeg.format = orig_ffmpeg_format
+        render.ffmpeg.codec = orig_ffmpeg_codec
+        render.ffmpeg.constant_rate_factor = orig_ffmpeg_constant_rate_factor
+        render.ffmpeg.ffmpeg_preset = orig_ffmpeg_ffmpeg_preset
+        render.ffmpeg.audio_codec = orig_ffmpeg_audio_codec
+
+        render.use_stamp = orig_use_stamp
+        render.stamp_note_text = orig_stamp_note_text
+
         return {'FINISHED'}
 
     def draw(self, context):
