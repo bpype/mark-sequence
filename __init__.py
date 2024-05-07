@@ -164,6 +164,12 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
 
+            # Store original animatic statuses
+            for sequence in context.scene.sequence_editor.sequences:
+                if sequence.type == 'MOVIE':
+                    sequence["_muted"] = sequence.mute
+                    sequence.mute = True
+
             # TODO: Store workbench settings in preview quality mode
 
             orig_gl_texture_limit = context.preferences.system.gl_texture_limit
@@ -359,6 +365,12 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 for o in bpy.data.objects:
                     o.hide_viewport = object_viewport_visibility[o.name]
 
+            # Restore original animatic statuses
+            for sequence in context.scene.sequence_editor.sequences:
+                if sequence.type == 'MOVIE':
+                    sequence.mute = sequence["_muted"]
+                    del sequence["_muted"]
+
             context.scene.render.use_stamp = orig_use_stamp
 
             print("Rendered playblast in %01.1fs" % (time() - start_time))
@@ -490,13 +502,19 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         orig_stamp_note_text = render.stamp_note_text
 
         # Store original output settings
-        orig_file_format = bpy.context.scene.render.image_settings.file_format
-        orig_color_management = bpy.context.scene.render.image_settings.color_management
-        orig_ffmpeg_format = bpy.context.scene.render.ffmpeg.format
-        orig_ffmpeg_codec = bpy.context.scene.render.ffmpeg.codec
-        orig_ffmpeg_constant_rate_factor = bpy.context.scene.render.ffmpeg.constant_rate_factor
-        orig_ffmpeg_ffmpeg_preset = bpy.context.scene.render.ffmpeg.ffmpeg_preset
-        orig_ffmpeg_audio_codec = bpy.context.scene.render.ffmpeg.audio_codec
+        orig_file_format = render.image_settings.file_format
+        orig_color_management = render.image_settings.color_management
+        orig_ffmpeg_format = render.ffmpeg.format
+        orig_ffmpeg_codec = render.ffmpeg.codec
+        orig_ffmpeg_constant_rate_factor = render.ffmpeg.constant_rate_factor
+        orig_ffmpeg_ffmpeg_preset = render.ffmpeg.ffmpeg_preset
+        orig_ffmpeg_audio_codec = render.ffmpeg.audio_codec
+
+        # Store original animatic statuses
+        for sequence in context.scene.sequence_editor.sequences:
+            if sequence.type == 'MOVIE':
+                sequence["_muted"] = sequence.mute
+                sequence.mute = True
 
         view_layer_visibilities = {}
         if self.do_render and self.do_single_layer:
@@ -575,6 +593,12 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         render.ffmpeg.constant_rate_factor = orig_ffmpeg_constant_rate_factor
         render.ffmpeg.ffmpeg_preset = orig_ffmpeg_ffmpeg_preset
         render.ffmpeg.audio_codec = orig_ffmpeg_audio_codec
+
+        # Restore original animatic statuses
+        for sequence in context.scene.sequence_editor.sequences:
+            if sequence.type == 'MOVIE':
+                sequence.mute = sequence["_muted"]
+                del sequence["_muted"]
 
         render.use_stamp = orig_use_stamp
         render.stamp_note_text = orig_stamp_note_text
