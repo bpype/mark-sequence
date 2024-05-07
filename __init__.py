@@ -164,6 +164,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
 
+            orig_use_sequencer = render.use_sequencer
+            orig_use_stamp = render.use_stamp
+
             # Store original animatic statuses
             for sequence in context.scene.sequence_editor.sequences:
                 if sequence.type == 'MOVIE':
@@ -187,8 +190,6 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     collection_viewport_visibility[c.name] = c.hide_viewport
                 for o in bpy.data.objects:
                     object_viewport_visibility[o.name] = o.hide_viewport
-
-            orig_use_stamp = context.scene.render.use_stamp
 
             # Setup render settings
             render.filepath = os.path.join(tmpdir, "tmp_image.")
@@ -240,7 +241,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 context.scene.eevee.taa_samples = 4
 
             # Disable metadata burning
-            context.scene.render.use_stamp = False
+            render.use_sequencer = False
+            render.use_stamp = False
 
             if self.do_render and self.do_hide_overlays and space is not None:
                 space.overlay.show_overlays = False
@@ -371,7 +373,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     sequence.mute = sequence["_muted"]
                     del sequence["_muted"]
 
-            context.scene.render.use_stamp = orig_use_stamp
+            render.use_sequencer = orig_use_sequencer
+            render.use_stamp = orig_use_stamp
 
             print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
