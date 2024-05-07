@@ -498,6 +498,7 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
             for setting in show_settings:
                 orig_show_settings[setting] = getattr(space, setting)
 
+        orig_use_sequencer = render.use_sequencer
         orig_use_stamp = render.use_stamp
         orig_stamp_note_text = render.stamp_note_text
 
@@ -510,11 +511,11 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         orig_ffmpeg_ffmpeg_preset = render.ffmpeg.ffmpeg_preset
         orig_ffmpeg_audio_codec = render.ffmpeg.audio_codec
 
-        # Store original animatic statuses
-        for sequence in context.scene.sequence_editor.sequences:
-            if sequence.type == 'MOVIE':
-                sequence["_muted"] = sequence.mute
-                sequence.mute = True
+        # # Store original animatic statuses
+        # for sequence in context.scene.sequence_editor.sequences:
+        #     if sequence.type == 'MOVIE':
+        #         sequence["_muted"] = sequence.mute
+        #         sequence.mute = True
 
         view_layer_visibilities = {}
         if self.do_render and self.do_single_layer:
@@ -548,6 +549,7 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         render.ffmpeg.constant_rate_factor = 'PERC_LOSSLESS'
         render.ffmpeg.ffmpeg_preset = 'GOOD'
         render.ffmpeg.audio_codec = 'AAC'
+        render.use_sequencer = False
         render.use_stamp = True
 
         out_name = self.filepath
@@ -594,12 +596,13 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         render.ffmpeg.ffmpeg_preset = orig_ffmpeg_ffmpeg_preset
         render.ffmpeg.audio_codec = orig_ffmpeg_audio_codec
 
-        # Restore original animatic statuses
-        for sequence in context.scene.sequence_editor.sequences:
-            if sequence.type == 'MOVIE':
-                sequence.mute = sequence["_muted"]
-                del sequence["_muted"]
+        # # Restore original animatic statuses
+        # for sequence in context.scene.sequence_editor.sequences:
+        #     if sequence.type == 'MOVIE':
+        #         sequence.mute = sequence["_muted"]
+        #         del sequence["_muted"]
 
+        render.use_sequencer = orig_use_sequencer
         render.use_stamp = orig_use_stamp
         render.stamp_note_text = orig_stamp_note_text
 
