@@ -141,9 +141,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
                 view_layer_visibilities[layer.name] = layer.use
 
         # Setup render settings
-        render.filepath = self.filepath
-        render.use_file_extension = True
-        render.image_settings.color_depth = '8'
         render.simplify_subdivision = 0
         render.simplify_subdivision_render = 0
         context.scene.eevee.taa_render_samples = 16
@@ -160,6 +157,8 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
                 layer.use = (layer == context.view_layer)
 
         # Setup output settings
+        render.filepath = self.filepath
+        render.use_file_extension = True
         render.image_settings.file_format = 'FFMPEG'
         render.image_settings.color_management = 'FOLLOW_SCENE'
         render.ffmpeg.format = 'QUICKTIME'
@@ -169,6 +168,8 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         render.ffmpeg.audio_codec = 'AAC'
         render.use_sequencer = False
         render.use_stamp = True
+
+        render.image_settings.color_depth = '8'
 
         out_name = self.filepath
         dir_path = os.path.dirname(out_name)
