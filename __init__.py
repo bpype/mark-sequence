@@ -106,6 +106,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
             orig_taa_render_samples = context.scene.eevee.taa_render_samples
             orig_taa_samples = context.scene.eevee.taa_samples
 
+            orig_use_preview_range = context.scene.use_preview_range
+
             orig_use_sequencer = render.use_sequencer
             orig_use_stamp = render.use_stamp
 
@@ -203,7 +205,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
             # Set current frame to first frame. Workaround GP bug at
             # https://developer.blender.org/T85035
             context.scene.frame_set(context.scene.frame_end)
-
+            context.scene.use_preview_range = False
+            
             # Get animated lens and f-stop, store it into a dict
             lens = {}
             fstop = {}
@@ -297,6 +300,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
             context.scene.eevee.taa_render_samples = orig_taa_render_samples
             context.scene.eevee.taa_samples = orig_taa_samples
             context.preferences.system.gl_texture_limit = orig_gl_texture_limit
+            context.scene.use_preview_range = orig_use_preview_range
+
             if self.do_render and space is not None:
                 space.overlay.show_overlays = orig_overlay
             if self.do_render:

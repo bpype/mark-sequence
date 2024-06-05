@@ -331,9 +331,9 @@ class SequenceMarker():
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(['%s' % (destination)])
-
-        proc = subprocess.run(ffmpeg_args)
-
+        print(" ".join(ffmpeg_args))
+        proc = subprocess.run(ffmpeg_args, check=True, shell=platform.system() == 'Windows')
+        
     @staticmethod
     def get_sequence_path(sequence):
         padding = sequence.getPaddingNum(sequence.padding())
