@@ -19,7 +19,7 @@
 bl_info = {
     "name": "LFS Playblast",
     "author": "Les Fées Spéciales",
-    "version": (1, 3, 2),
+    "version": (1, 4, 0),
     "blender": (2, 80, 0),
     "location": "View3D > View Menu",
     "description": "Playblast with right info",
@@ -38,6 +38,7 @@ from . import viewport_playblast
 from .mark_sequence import SequenceMarker
 from .utils.wm import find_area, find_region_3d, find_space
 from .utils.image import proxify, proxify_images
+from .utils.anim import get_frame_markers
 
 
 class LFS_OT_Playblast(bpy.types.Operator):
@@ -206,10 +207,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
             # https://developer.blender.org/T85035
             context.scene.frame_set(context.scene.frame_end)
             context.scene.use_preview_range = False
-            
-            # Get animated lens and f-stop, store it into a dict
+
+            # Get animated properties, store them in a dict
             lens = {}
             fstop = {}
+            markers = get_frame_markers(context)
             previous_frame = context.scene.frame_current
             for f in range(context.scene.frame_start, context.scene.frame_end+1):
                 context.scene.frame_set(f)
@@ -224,6 +226,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                                else space.lens)
                 # Skip decimal precision, we probably don't need that
                 lens[f] = round(lens[f])
+
             context.scene.frame_set(previous_frame)
 
 
@@ -240,6 +243,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                                              render.resolution_y * render.resolution_percentage // 100),
                     "focal_length": lens,
                     "fstop": fstop,
+                    "timeline_marker": markers,
                     "file_name": os.path.basename(bpy.data.filepath),
                     "audio_file": None,
                     "frame_rate": render.fps / render.fps_base,

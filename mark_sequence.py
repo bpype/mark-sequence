@@ -119,6 +119,11 @@ default_template = {
             "string": " F-Stop: %s  "
         },
         {
+            "name": "timeline_marker",
+            "direction": "South",
+            "string": " ▲ %s "
+        },
+        {
             "name": "studio",
             "direction": "SouthEast",
             "string": " %s "
@@ -260,16 +265,19 @@ class SequenceMarker():
         # This has the effect of concatenating various fields for a given direction
         for field in self.template['fields']:
             direction = field['direction']
-            value = field['string']
+            field_string = field['string']
             # Try formatting the string with the value from the passed data
             try:
-                value %= image_data[field['name']]
+                field_value = image_data[field['name']]
             except BaseException as e:
                 print(f"Could not evaluate field {field['name']}: {e}")
                 continue
-            if not direction in directions:
+            if field_value is None:
+                continue
+            field_string %= field_value
+            if direction not in directions:
                 directions[direction] = ''
-            directions[direction] += (value)
+            directions[direction] += field_string
 
         # Set text color and size for outside stroke
         convert_args.extend(['-fill', 'black', '-strokewidth', '3',
