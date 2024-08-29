@@ -100,9 +100,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         orig_use_file_extension = render.use_file_extension
         orig_file_format = render.image_settings.file_format
         orig_color_depth = render.image_settings.color_depth
-        orig_simplify = render.use_simplify
-        orig_simplify_subdivision = render.simplify_subdivision
-        orig_simplify_subdivision_render = render.simplify_subdivision_render
         orig_taa_render_samples = context.scene.eevee.taa_render_samples
         orig_taa_samples = context.scene.eevee.taa_samples
         orig_gl_texture_limit = context.preferences.system.gl_texture_limit
@@ -141,8 +138,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
                 view_layer_visibilities[layer.name] = layer.use
 
         # Setup render settings
-        render.simplify_subdivision = 0
-        render.simplify_subdivision_render = 0
         context.scene.eevee.taa_render_samples = 16
         context.scene.eevee.taa_samples = 16
         if space is not None:
@@ -189,9 +184,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         render.use_file_extension = orig_use_file_extension
         render.image_settings.file_format = orig_file_format
         render.image_settings.color_depth = orig_color_depth
-        render.use_simplify = orig_simplify
-        render.simplify_subdivision = orig_simplify_subdivision
-        render.simplify_subdivision_render = orig_simplify_subdivision_render
         context.scene.eevee.taa_render_samples = orig_taa_render_samples
         context.scene.eevee.taa_samples = orig_taa_samples
         context.preferences.system.gl_texture_limit = orig_gl_texture_limit
