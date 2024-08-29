@@ -313,8 +313,8 @@ class SequenceMarker():
                 ')',
                 '-composite'])
 
-        # Debug alpha channel
-        convert_args.extend(['-alpha', 'remove'])
+        # Remove alpha channel
+        convert_args.extend(['-background', 'black', '-alpha', 'remove'])
         convert_args.extend(['-compress', 'Piz'])  # TODO : remettre DWAA quand ffmpeg le permettra
 
         # Output
