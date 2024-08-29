@@ -72,6 +72,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
     scene: bpy.props.StringProperty(name="Shot", description="Shot number")
     version: bpy.props.StringProperty(name="Version", description="Version of the shot")
+    frame_count : bpy.props.IntProperty(name="Kitsu Frames Count",description='Minimum number of frames for the shot as set on Kitsu',default = 1)
 
     template_path: bpy.props.StringProperty(name="Template", description="Custom marking field template", maxlen=1024)
 
@@ -95,6 +96,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
             if self.do_reduce_textures:
                 print("Reducing textures")
                 proxify_images(context, self.target_texture_width)
+            
+            #Compare scene frame count and frame count set on Kitsu
+            frame_total = context.scene.frame_end - context.scene.frame_start + 1
+            if int(self.frame_count) > frame_total :
+                self.report({'WARNING'}, f"File is missing {self.frame_count - frame_total} frames to render (Expected : {self.frame_count})")
 
             # Store original render settings
             orig_filepath = render.filepath
