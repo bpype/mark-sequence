@@ -347,6 +347,10 @@ class SequenceMarker():
         padding = sequence.getPaddingNum(sequence.padding())
         return sequence.format('{dirname}{basename}%0' + str(padding) + 'd{extension}')
 
+    def play_movie(self):
+        if os.path.exists(self.data['video_output']):
+            os.startfile(self.data['video_output'])
+    #verifier si le nom du fichier contient "anim"
 
 if __name__ == "__main__":
     # Parse command line arguments

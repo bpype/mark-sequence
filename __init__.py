@@ -65,6 +65,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     do_reduce_textures: bpy.props.BoolProperty(name="Reduce Textures", description="Reduce texture sizes before render, to reduce memory footprint", default=False)
     target_texture_width: bpy.props.IntProperty(name="Target Texture Width", description="Reduce textures greater than this width, to this width", default=4096)
     resolution_percentage: bpy.props.IntProperty(name="Resolution Percentage", description="Scale the render resolution according to this percentage", default=100)
+    do_autoplay : bpy.props.BoolProperty(name="Autoplay",description='Auto Play playblast when render is finished',default=True)
 
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
@@ -291,6 +292,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
             sequence_marker = SequenceMarker(os.path.join(tmpdir, "tmp_image.0000.tif"),
                                              data, template)
             sequence_marker.mark_sequence()
+
+            if self.do_autoplay:
+                sequence_marker.play_movie()
 
             # Restore original render settings
             render.filepath = orig_filepath
