@@ -183,7 +183,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
             render.simplify_child_particles_render = 0.0
 
             if self.quality == 'PREVIEW':
-                render.engine = 'BLENDER_EEVEE'
+                render.engine = 'BLENDER_EEVEE_NEXT'
                 # Take camera's point of view
                 space.region_3d.view_perspective = 'CAMERA'
                 # Set shading to material preview
