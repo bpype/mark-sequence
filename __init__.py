@@ -19,7 +19,7 @@
 bl_info = {
     "name": "LFS Playblast",
     "author": "Les Fées Spéciales",
-    "version": (1, 4, 2),
+    "version": (1, 4, 3),
     "blender": (2, 80, 0),
     "location": "View3D > View Menu",
     "description": "Playblast with right info",
@@ -210,9 +210,6 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             os.makedirs(dir_path, exist_ok=True)
 
-            # Set current frame to first frame. Workaround GP bug at
-            # https://developer.blender.org/T85035
-            context.scene.frame_set(context.scene.frame_end)
             context.scene.use_preview_range = False
 
             # Get animated properties, store them in a dict
