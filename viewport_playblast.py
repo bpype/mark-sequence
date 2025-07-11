@@ -75,7 +75,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
             "show_edge_crease",
             "show_edge_seams",
             "show_edge_sharp",
-            "show_edges",
             "show_extra_edge_angle",
             "show_extra_edge_length",
             "show_extra_face_angle",
