@@ -308,11 +308,11 @@ class SequenceMarker:
         if self.data["resolution_x"] % 2 or self.data["resolution_y"] % 2:
             video_filter += "pad=ceil(iw/2)*2:ceil(ih/2)*2, "
 
-        # Background color
-        # FIXME: lookup ASS' way to calculate text height.
-        height = self.template["settings"]["font_size"] * 2
-        video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
-        video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
+        # # Background color
+        # # FIXME: lookup ASS' way to calculate text height.
+        # height = self.template["settings"]["font_size"] * 2
+        # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
+        # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
 
         # Subtitles
         video_filter += f"ass={ass_path}"
