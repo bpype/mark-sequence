@@ -17,6 +17,7 @@ bl_info = {
 
 
 import bpy
+from bpy.app.translations import pgettext_data as data_
 import os
 import tempfile
 import json
@@ -40,6 +41,12 @@ class LFS_OT_Playblast(bpy.types.Operator):
     )
     filename_ext = ".mov"
     filter_glob: bpy.props.StringProperty(default="*.mov", options={'HIDDEN'})
+    check_existing: bpy.props.BoolProperty(
+        name="Check Existing",
+        description="Check and warn on overwriting existing files",
+        default=True,
+        options={'HIDDEN'},
+    )
 
     do_render: bpy.props.BoolProperty(
         name="Do Render", description="Use real render instead of viewport preview"
@@ -101,6 +108,17 @@ class LFS_OT_Playblast(bpy.types.Operator):
     template_path: bpy.props.StringProperty(name="Template", description="Custom marking field template", maxlen=1024)
 
     def invoke(self, context, _event):
+        """Copied from ExportHelper"""
+        import os
+        if not self.filepath:
+            blend_filepath = context.blend_data.filepath
+            if not blend_filepath:
+                blend_filepath = data_("Untitled")
+            else:
+                blend_filepath = os.path.splitext(blend_filepath)[0]
+
+            self.filepath = bpy.path.ensure_ext(blend_filepath, ".mov")
+
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 

@@ -19,8 +19,14 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
     filepath: bpy.props.StringProperty(
         maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'}
     )
-    filename_ext = ".mov"
     filter_glob: bpy.props.StringProperty(default="*.mov", options={'HIDDEN'})
+    filename_ext = ".mov"
+    check_existing: bpy.props.BoolProperty(
+        name="Check Existing",
+        description="Check and warn on overwriting existing files",
+        default=True,
+        options={'HIDDEN'},
+    )
 
     do_render: bpy.props.BoolProperty(
         name="Do Render", description="Use real render instead of viewport preview"
