@@ -23,12 +23,6 @@ install it with pip:
 pip install fileseq
 ```
 
-or sometimes, if you have Python 2 and Python 3 installed on your system:
-
-``` bash
-pip3 install fileseq
-```
-
 ## Usage
 Make an annotated movie output from a list of images. A JSON template
 may be specified, which will contain fields such as:
