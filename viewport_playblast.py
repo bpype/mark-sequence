@@ -23,20 +23,26 @@ from .utils.wm import find_region_3d, find_space
 
 
 class LFS_OT_Viewport_Playblast(bpy.types.Operator):
-    '''Quick render in the viewport'''
+    """Quick render in the viewport"""
+
     bl_idname = "lfs.viewport_playblast"
     bl_label = "Viewport Playblast"
     bl_options = {'REGISTER', 'PRESET'}
 
-    filepath: bpy.props.StringProperty(maxlen=1024, subtype='FILE_PATH',
-                             options={'HIDDEN', 'SKIP_SAVE'})
+    filepath: bpy.props.StringProperty(
+        maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'}
+    )
     filename_ext = ".mov"
-    filter_glob: bpy.props.StringProperty(
-        default="*.mov",
-        options={'HIDDEN'})
+    filter_glob: bpy.props.StringProperty(default="*.mov", options={'HIDDEN'})
 
-    do_render: bpy.props.BoolProperty(name="Do Render", description="Use real render instead of viewport preview")
-    do_single_layer: bpy.props.BoolProperty(name="Single Layer", description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only", default=False)
+    do_render: bpy.props.BoolProperty(
+        name="Do Render", description="Use real render instead of viewport preview"
+    )
+    do_single_layer: bpy.props.BoolProperty(
+        name="Single Layer",
+        description="Disable all layers but the one called View Layer, or the active one. If it is not found, keep the current one only",
+        default=False,
+    )
     check_existing: bpy.props.BoolProperty(
         name="Check Existing",
         description="Check and warn on overwriting existing files",
@@ -46,53 +52,97 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
 
     @staticmethod
     def update(scene):
-        scene.render.stamp_note_text = f"F-Stop: {scene.camera.data.dof.aperture_fstop:3.3}"
+        scene.render.stamp_note_text = (
+            f"F-Stop: {scene.camera.data.dof.aperture_fstop:3.3}"
+        )
 
     def invoke(self, context, _event):
-        self.filepath = bpy.data.filepath.replace(".blend", "_movie.mov").replace("_blend", "_movie_mov")
-        os.makedirs(os.path.dirname(os.path.abspath(bpy.path.abspath(self.filepath))), exist_ok=True)
+        self.filepath = bpy.data.filepath.replace(".blend", "_movie.mov").replace(
+            "_blend", "_movie_mov"
+        )
+        os.makedirs(
+            os.path.dirname(os.path.abspath(bpy.path.abspath(self.filepath))),
+            exist_ok=True,
+        )
         return self.execute(context)
 
     def execute(self, context):
         render = context.scene.render
         space = find_space(context)
 
-        if hasattr(space, 'region_3d'):
+        if hasattr(space, "region_3d"):
             region_3d = space.region_3d
         else:
             region_3d = find_region_3d(context)
 
         overlay_settings = [
             # 'show_overlays', 'show_extras',
-            'show_annotation', 'show_axis_x', 'show_axis_y',
-            'show_axis_z', 'show_bones', 'show_cursor', 'show_curve_normals',
-            'show_edge_bevel_weight', 'show_edge_crease', 'show_edge_seams',
-            'show_edge_sharp', 'show_edges', 'show_extra_edge_angle',
-            'show_extra_edge_length', 'show_extra_face_angle',
-            'show_extra_face_area', 'show_extra_indices',
-            'show_face_center', 'show_face_normals', 'show_face_orientation',
-            'show_faces', 'show_fade_inactive', 'show_floor',
-            'show_freestyle_edge_marks', 'show_freestyle_face_marks',
-            'show_light_colors', 'show_look_dev', 'show_motion_paths',
-            'show_object_origins', 'show_object_origins_all',
-            'show_onion_skins', 'show_ortho_grid', 'show_outline_selected',
-            'show_paint_wire', 'show_relationship_lines',
-            'show_retopology', 'show_sculpt_curves_cage',
-            'show_sculpt_face_sets', 'show_sculpt_mask', 'show_split_normals',
-            'show_stats', 'show_statvis', 'show_text', 'show_vertex_normals',
-            'show_viewer_attribute', 'show_weight', 'show_wireframes',
-            'show_wpaint_contours', 'show_xray_bone',
+            "show_annotation",
+            "show_axis_x",
+            "show_axis_y",
+            "show_axis_z",
+            "show_bones",
+            "show_cursor",
+            "show_curve_normals",
+            "show_edge_bevel_weight",
+            "show_edge_crease",
+            "show_edge_seams",
+            "show_edge_sharp",
+            "show_edges",
+            "show_extra_edge_angle",
+            "show_extra_edge_length",
+            "show_extra_face_angle",
+            "show_extra_face_area",
+            "show_extra_indices",
+            "show_face_center",
+            "show_face_normals",
+            "show_face_orientation",
+            "show_faces",
+            "show_fade_inactive",
+            "show_floor",
+            "show_freestyle_edge_marks",
+            "show_freestyle_face_marks",
+            "show_light_colors",
+            "show_look_dev",
+            "show_motion_paths",
+            "show_object_origins",
+            "show_object_origins_all",
+            "show_onion_skins",
+            "show_ortho_grid",
+            "show_outline_selected",
+            "show_paint_wire",
+            "show_relationship_lines",
+            "show_retopology",
+            "show_sculpt_curves_cage",
+            "show_sculpt_face_sets",
+            "show_sculpt_mask",
+            "show_split_normals",
+            "show_stats",
+            "show_statvis",
+            "show_text",
+            "show_vertex_normals",
+            "show_viewer_attribute",
+            "show_weight",
+            "show_wireframes",
+            "show_wpaint_contours",
+            "show_xray_bone",
         ]
 
         show_settings = [
             # 'show_object_viewport_mesh', 'show_object_viewport_curve',
             # 'show_object_viewport_curves', 'show_object_viewport_empty',
-            'show_object_viewport_armature', 'show_object_viewport_camera',
-            'show_object_viewport_font', 'show_object_viewport_grease_pencil',
-            'show_object_viewport_lattice', 'show_object_viewport_light',
-            'show_object_viewport_light_probe', 'show_object_viewport_meta',
-            'show_object_viewport_pointcloud', 'show_object_viewport_speaker',
-            'show_object_viewport_surf', 'show_object_viewport_volume',
+            "show_object_viewport_armature",
+            "show_object_viewport_camera",
+            "show_object_viewport_font",
+            "show_object_viewport_grease_pencil",
+            "show_object_viewport_lattice",
+            "show_object_viewport_light",
+            "show_object_viewport_light_probe",
+            "show_object_viewport_meta",
+            "show_object_viewport_pointcloud",
+            "show_object_viewport_speaker",
+            "show_object_viewport_surf",
+            "show_object_viewport_volume",
         ]
 
         # Store original render settings
@@ -230,7 +280,11 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
 
 def playblast_button(self, context):
     row = self.layout.row()
-    self.layout.operator(LFS_OT_Viewport_Playblast.bl_idname, text="LFS Viewport Playblast", icon="RENDER_ANIMATION")
+    self.layout.operator(
+        LFS_OT_Viewport_Playblast.bl_idname,
+        text="LFS Viewport Playblast",
+        icon='RENDER_ANIMATION',
+    )
     self.layout.separator()
 
 
@@ -238,9 +292,11 @@ def register():
     bpy.utils.register_class(LFS_OT_Viewport_Playblast)
     bpy.types.VIEW3D_MT_view.prepend(playblast_button)
 
+
 def unregister():
     bpy.types.VIEW3D_MT_view.remove(playblast_button)
     bpy.utils.unregister_class(LFS_OT_Viewport_Playblast)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     register()

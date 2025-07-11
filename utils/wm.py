@@ -16,29 +16,26 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-
 def find_area(context):
-    if (context.area is not None
-            and context.area.type == 'VIEW_3D'):
+    if context.area is not None and context.area.type == "VIEW_3D":
         return context.area
     for area in context.screen.areas:
-        if area.type == 'VIEW_3D':
+        if area.type == "VIEW_3D":
             return area
     return None
 
 
 def find_region_3d(context):
     for area in context.screen.areas:
-        if area.type == 'VIEW_3D':
+        if area.type == "VIEW_3D":
             return area.spaces[0].region_3d
     return None
 
 
 def find_space(context):
-    if (context.space_data is not None
-            and context.space_data.type == 'VIEW_3D'):
+    if context.space_data is not None and context.space_data.type == "VIEW_3D":
         return context.space_data
     for area in context.screen.areas:
-        if area.type == 'VIEW_3D':
+        if area.type == "VIEW_3D":
             return area.spaces[0]
     return None
