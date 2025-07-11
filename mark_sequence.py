@@ -12,7 +12,7 @@ import json
 import argparse
 import fileseq
 import textwrap
-from tempfile import mkdtemp
+from tempfile import mkstemp
 from math import inf
 from concurrent.futures import ThreadPoolExecutor
 
@@ -23,8 +23,7 @@ __all__ = ["default_template", "SequenceMarker"]
 default_template = {
     "settings": {
         "font_size": 24,
-        "color": "white",
-        # "color": "chartreuse"
+        "color": "&H00FFFFFF",
     },
     "fields": [
         {
@@ -128,15 +127,18 @@ default_template = {
 }
 
 
-def frames_to_timecode(frames, fps=24):
+def frame_to_timecode(frame, fps=24, use_frame_cents=False):
     """
     Adapted from github gist:
     https://gist.github.com/schiffty/c838db504b9a1a7c23a30c366e8005e8
     """
-    # h = int(frames / 86400)
-    m = int(frames / 1440) % 60
-    s = int((frames % 1440) / fps)
-    f = frames % 1440 % fps
+    h = int(frame / 86400)
+    m = int(frame / 1440) % 60
+    s = int((frame % 1440) / fps)
+    f = frame % 1440 % fps
+    if use_frame_cents:
+        f = int(f * 100 / fps)
+        return "%01d:%02d:%02d.%02d" % (h, m, s, f)
     return "%02d:%02d:%02d" % (m, s, f)
 
 
@@ -144,44 +146,47 @@ class SequenceMarker:
     def __init__(self, image_filepath, data, template=default_template):
         self.data = data
         self.template = template or default_template
-        self.create_temp_dir()
 
         self.file_sequence = fileseq.findSequenceOnDisk(image_filepath)
         self.frame_set = self.file_sequence.frameSet()
 
-    def create_temp_dir(self):
-        """Create temporary directory for images"""
-        if "mark_dir" in self.data and self.data["mark_dir"]:
-            self.mark_dir = self.data["mark_dir"]
-            os.makedirs(self.mark_dir, exist_ok=True)
-        else:
-            self.mark_dir = mkdtemp()
+    def generate_ass_file(self):
+        settings = self.template["settings"]
+        font_path = os.path.join(
+            os.path.dirname(__file__),
+            "data", "fonts", "LiberationMono-Regular.ttf"
+        )
+        ass_text = textwrap.dedent("""
+            [Script Info]
+            Title: Default Aegisub file
+            ScriptType: v4.00+
+            WrapStyle: 0
+            ScaledBorderAndShadow: yes
+            YCbCr Matrix: TV.709
+            PlayResX: {res_x}
+            PlayResY: {res_y}
 
-    def delete_temp_dir(self):
-        """Delete temporary directory"""
-        if not ("mark_dir" in self.data and self.data["mark_dir"]):
-            print("Deleting temp dir...")
-            from shutil import rmtree
+            [V4+ Styles]
+            Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+            Style: North,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,8,2,2,2,1
+            Style: NorthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,9,2,2,2,1
+            Style: East,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,6,2,2,2,1
+            Style: SouthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,1,1.5,3,2,2,2,1
+            Style: South,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,2,2,2,2,1
+            Style: SouthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,1,2,2,2,1
+            Style: West,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,4,2,2,2,1
+            Style: NorthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,7,2,2,2,1
 
-            rmtree(self.mark_dir)
-
-    def mark_sequence(self):
-        last_image_marked = self.mark_images()
-
-        marked_sequence = fileseq.findSequenceOnDisk(last_image_marked)
-        if self.data["video_output"]:
-            self.render_video(
-                self.get_sequence_path(marked_sequence),
-                os.path.abspath(self.data["video_output"]),
-                audio_file=self.data["audio_file"],
-                frame_rate=self.data["frame_rate"],
-            )
-
-        self.delete_temp_dir()
-
-    def mark_images(self):
-        """Batch mark images"""
-        image_data = self.data.copy()
+            [Events]
+            Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+            """
+        ).format(
+            res_x=self.data["resolution_x"],
+            res_y=self.data["resolution_y"],
+            font_size=settings["font_size"],
+            color=settings["color"],
+            font_path=font_path,
+        )
 
         # Special fields: for each special field, give a default if it is
         # specified in the template but not passed as data
@@ -189,147 +194,107 @@ class SequenceMarker:
             if field["name"] == "date":
                 import datetime
 
-                image_data["date"] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
+                self.data["date"] = datetime.datetime.now().strftime("%d-%m-%y %H:%M")
             if field["name"] == "user":
                 import getpass
 
-                image_data["user"] = getpass.getuser()
+                self.data["user"] = getpass.getuser()
             if field["name"] == "hostname":
                 import platform
 
-                image_data["hostname"] = platform.node()
+                self.data["hostname"] = platform.node()
             if field["name"] == "total_images":
-                image_data["total_images"] = len(self.frame_set)
+                self.data["total_images"] = len(self.frame_set)
             if field["name"] == "total_tc":
-                image_data["total_tc"] = frames_to_timecode(len(self.frame_set))
+                self.data["total_tc"] = frame_to_timecode(len(self.frame_set))
 
-        with ThreadPoolExecutor() as executor:
-            for i, image_number in enumerate(self.frame_set):
-                if image_number < self.data["start_frame"] or image_number > self.data["end_frame"]:
+        frame_rate = self.data["frame_rate"]
+        for i, image_number in enumerate(self.frame_set):
+            if image_number < self.data["start_frame"] or image_number > self.data["end_frame"]:
+                continue
+            image_data = self.data.copy()
+
+            # Special fields evaluated at each frame
+            for field in self.template["fields"]:
+                if field["name"] == "frame_number":
+                    image_data["frame_number"] = image_number
+                elif field["name"] == "normalized_frame_number":
+                    image_data["normalized_frame_number"] = i - self.data["offset"] + 1
+                elif field["name"] == "tc":
+                    image_data["tc"] = frame_to_timecode(i - self.data["offset"] + 1, self.data["frame_rate"])
+                elif field["name"] in self.data and type(self.data[field["name"]]) is dict:
+                    image_data[field["name"]] = self.data[field["name"]][image_number]
+
+            # Add annotations for each field to the list of directions
+            # This has the effect of concatenating various fields for a given direction
+            directions = {}
+            for field in self.template["fields"]:
+                direction = field["direction"]
+                field_string = field["string"]
+                # Try formatting the string with the value from the passed data
+                if field["name"] not in image_data:
+                    print(f"Could not evaluate field {field['name']}")
                     continue
-                image_source = self.file_sequence.frame(image_number)
-                image_marked = os.path.join(self.mark_dir, "marked.%04i.tif" % (i - self.data["offset"] + 1))
+                field_value = image_data[field["name"]]
+                if field_value is None:
+                    continue
+                field_string %= field_value
+                if direction not in directions:
+                    directions[direction] = ""
+                directions[direction] += field_string
 
-                # Special fields evaluated at each frame
-                for field in self.template["fields"]:
-                    if field["name"] == "frame_number":
-                        image_data["frame_number"] = image_number
-                    if field["name"] == "normalized_frame_number":
-                        image_data["normalized_frame_number"] = i - self.data["offset"] + 1
-                    if field["name"] == "tc":
-                        image_data["tc"] = frames_to_timecode(i - self.data["offset"] + 1, self.data["frame_rate"])
-                    if field["name"] in self.data and type(self.data[field["name"]]) is dict:
-                        image_data[field["name"]] = self.data[field["name"]][image_number]
+            start_time = frame_to_timecode(
+                i - image_data["offset"], frame_rate, use_frame_cents=True
+            )
+            end_time = frame_to_timecode(
+                i - image_data["offset"] + 1, frame_rate, use_frame_cents=True
+            )
+            # Add annotations for each field
+            for direction, value in directions.items():
+                ass_text += f"Dialogue: 0,{start_time},{end_time},{direction},,0,0,0,,{value}\n"
 
-                executor.submit(self.mark_image, image_source, image_marked, image_data.copy())
+            # # FIXME Add image annotations
+            # for image in self.template["image_fields"]:
+            #     convert_args.append("(")
 
-        # Return last image path
-        return image_marked
+            #     # File path, either from template or from command line
+            #     if image["field"] and image_data[image["field"]]:
+            #         convert_args.append(os.path.abspath(image_data[image["field"]]))
+            #     else:
+            #         convert_args.append(image["path"])
+            #     convert_args.extend(
+            #         [
+            #             "-gravity", image["direction"],
+            #             "-geometry", image["geometry"],
+            #             ")",
+            #             "-composite",
+            #         ]
+            #     )
 
-    def mark_image(self, path, output_path, image_data):
-        """Use ImageMagick's convert command line utility to overlay metadata on
-        specified image"""
-        print("Marking image %s..." % image_data["frame_number"])
+        ass_descriptor, ass_path = mkstemp(suffix=".ass", text=True)
+        with os.fdopen(ass_descriptor, 'w') as ass_file:
+            ass_file.write(ass_text)
+        return ass_path
 
-        convert_args = ["convert"]
-        convert_args += ["%s" % path]
+    def mark_sequence(self):
+        ass_path = self.generate_ass_file()
 
+        if self.data["video_output"]:
+            self.render_video(
+                self.get_sequence_path(self.file_sequence),
+                os.path.abspath(self.data["video_output"]),
+                ass_path=ass_path,
+            )
+
+    def render_video(self, img_sources, destination, ass_path):
+        first_frame = self.data.get("start_frame")
+        frame_rate = self.data.get("frame_rate", 25)
+        audio_file = self.data.get("audio_file")
         settings = self.template["settings"]
 
-        directions = {}
-
-        # Add annotations for each field to the list of directions
-        # This has the effect of concatenating various fields for a given direction
-        for field in self.template["fields"]:
-            direction = field["direction"]
-            field_string = field["string"]
-            # Try formatting the string with the value from the passed data
-            try:
-                field_value = image_data[field["name"]]
-            except BaseException as e:
-                print(f"Could not evaluate field {field['name']}: {e}")
-                continue
-            if field_value is None:
-                continue
-            field_string %= field_value
-            if direction not in directions:
-                directions[direction] = ""
-            directions[direction] += field_string
-
-        # Set text color and size for outside stroke
-        convert_args.extend(
-            [
-                "-fill", "black",
-                "-strokewidth", "3",
-                "-stroke", "black",
-                "-weight", "bold",
-                "-font", os.path.join(
-                    os.path.dirname(__file__), "data/fonts/LiberationMono-Regular.ttf"
-                ),
-                "-pointsize", str(settings["font_size"]),
-            ]
-        )
-
-        # Add annotations for each field, for outside stroke
-        for direction, value in directions.items():
-            convert_args.extend(
-                [
-                    "-gravity", direction,
-                    "-annotate", "0", value,
-                ]
-            )
-
-        # Set text color and size for fill
-        convert_args.extend(
-            [
-                "-fill", settings["color"],
-                "-stroke", "none",
-                "-weight", "bold",
-                "-pointsize", str(settings["font_size"]),
-            ]
-        )
-
-        # Add annotations for each field, with only inside fill
-        for direction, value in directions.items():
-            convert_args.extend(
-                [
-                    "-gravity", direction,
-                    "-annotate", "0", value
-                ]
-            )
-
-        # Add image annotations
-        for image in self.template["image_fields"]:
-            convert_args.append("(")
-
-            # File path, either from template or from command line
-            if image["field"] and image_data[image["field"]]:
-                convert_args.append(os.path.abspath(image_data[image["field"]]))
-            else:
-                convert_args.append(image["path"])
-            convert_args.extend(
-                [
-                    "-gravity", image["direction"],
-                    "-geometry", image["geometry"],
-                    ")",
-                    "-composite",
-                ]
-            )
-
-        # Remove alpha channel
-        convert_args.extend(["-background", "black", "-alpha", "remove"])
-        # TODO : remettre DWAA quand ffmpeg le permettra
-        convert_args.extend(["-compress", "Piz"])
-
-        # Output
-        convert_args.append("%s" % output_path)
-        # Windows needs to use shell=True, see https://stackoverflow.com/a/41860823
-        proc = subprocess.run(convert_args, check=True, shell=platform.system() == "Windows")
-
-    def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
-        print("Generating video...")
         ffmpeg_args = ["ffmpeg", "-y", "-loglevel", "error"]
         ffmpeg_args.extend(["-r", str(frame_rate)])
+        ffmpeg_args.extend(["-start_number", str(first_frame)])
         ffmpeg_args.extend(["-i", img_sources])
 
         if audio_file is not None:
@@ -337,12 +302,30 @@ class SequenceMarker:
             ffmpeg_args.extend(["-c:a", "aac", "-b:a", "160k"])
             ffmpeg_args.extend(["-map", "0:0", "-map", "1:0"])
 
+        video_filter = ""
+        # If image res is odd, pad it by one pixel to allow h.264 encoding.
+        # https://stackoverflow.com/q/20847674
+        if self.data["resolution_x"] % 2 or self.data["resolution_y"] % 2:
+            video_filter += "pad=ceil(iw/2)*2:ceil(ih/2)*2, "
+
+        # Background color
+        # FIXME: lookup ASS' way to calculate text height.
+        height = self.template["settings"]["font_size"] * 2
+        video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
+        video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
+
+        # Subtitles
+        video_filter += f"ass={ass_path}"
+        ffmpeg_args.extend(["-vf", video_filter])
+
         # Video codec
         ffmpeg_args.extend(["-c:v", "mjpeg", "-q:v", "3"])
-        # ffmpeg_args.extend(['-c:v', 'h264', '-crf', '25', '-preset', 'slow', '-pix_fmt', 'yuv420p'])
+        # ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(["%s" % (destination)])
+
+        print("Generating video...")
         proc = subprocess.run(ffmpeg_args, check=True, shell=platform.system() == "Windows")
 
     @staticmethod
@@ -351,7 +334,7 @@ class SequenceMarker:
         return sequence.format("{dirname}{basename}%0" + str(padding) + "d{extension}")
 
     def play_movie(self):
-        if os.path.exists(self.data["video_output"]):
+        if platform.system() == "Windows" and os.path.exists(self.data["video_output"]):
             os.startfile(self.data["video_output"])
 
     # verifier si le nom du fichier contient "anim"

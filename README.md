@@ -1,19 +1,16 @@
-_Mark sequence_, a command line script to stamp text information on
+_Mark Sequence_, a command line script to stamp text information on
 image sequences.
 
 ## Installation
 ### Dependencies
-This script uses ImageMagick and FFmpeg. On Linux, use your package
-manager. Debian-based distributions users can use:
+This script uses FFmpeg. On Linux, use your package manager.
+Debian-based distributions users can use:
 ``` bash
-apt install ffmpeg imagemagick
+apt install ffmpeg
 ```
 
-On Windows, please download and install
-[ImageMagick](https://imagemagick.org/script/download.php#windows). In
-the installer wizard, make sure you select "Add application directory
-to your system path", "Install FFmpeg" and "Install legacy utilities
-(e.g. convert)".
+On Windows, download and install one of the builds linked to from the
+[official website](https://ffmpeg.org/download.html#build-windows).
 
 The script also depends on the
 [Fileseq](https://pypi.org/project/Fileseq/) Python library. You can
@@ -36,6 +33,7 @@ may be specified, which will contain fields such as:
 The `mark_sequence.py` file may be used either as a command-line
 progam, or as a Python module.
 
+
 ### Command-line arguments
 ``` bash
 ./mark_sequence.py -t my_template.json -o converted_sequence.mov --scene 24 test_sequence.001.png
@@ -55,6 +53,7 @@ East, SouthEast, South, SouthWest, West, NorthWest. If a direction is
 specified multiple times, the corresponding fields will be
 concatenated.
 
+
 ### Python module
 
 ``` python
@@ -73,9 +72,10 @@ sequence_marker = SequenceMarker("my_sequence.0000.tif", data)
 sequence_marker.mark_sequence()
 ```
 
-This will call imagemagick and FFmpeg in turn, and generate a
-`playblast.mov` sequence in the current directory, with some options
-from the default template overridden.
+This will call FFmpeg to generate a `playblast.mov` sequence in the
+current directory, with some options from the default template
+overridden.
+
 
 ## License
 This script is licensed under the GPLv2 license. Please see the
