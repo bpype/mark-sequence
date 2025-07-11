@@ -19,23 +19,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 __all__ = ["default_template", "SequenceMarker"]
 
-# Paths of installed binaries, depending on environment
-# It would be better to let the OS handle the path, but for now let's not
-bins = {
-    "Linux": {
-        "ffmpeg": "ffmpeg",
-        "convert": "convert",
-    },
-    "Windows": {
-        "ffmpeg": "ffmpeg",
-        "convert": "convert",
-    },
-    "Darwin": {
-        "ffmpeg": "ffmpeg",
-        "convert": "convert",
-    },
-}
-
 
 default_template = {
     "settings": {
@@ -248,8 +231,7 @@ class SequenceMarker:
         specified image"""
         print("Marking image %s..." % image_data["frame_number"])
 
-        convert_bin = bins[platform.system()]["convert"]
-        convert_args = [convert_bin]
+        convert_args = ["convert"]
         convert_args += ["%s" % path]
 
         settings = self.template["settings"]
@@ -346,8 +328,7 @@ class SequenceMarker:
 
     def render_video(self, img_sources, destination, audio_file=None, frame_rate=25):
         print("Generating video...")
-        ffmpeg_bin = bins[platform.system()]["ffmpeg"]
-        ffmpeg_args = [ffmpeg_bin, "-y", "-loglevel", "error"]
+        ffmpeg_args = ["ffmpeg", "-y", "-loglevel", "error"]
         ffmpeg_args.extend(["-r", str(frame_rate)])
         ffmpeg_args.extend(["-i", img_sources])
 
