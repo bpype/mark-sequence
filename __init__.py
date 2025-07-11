@@ -43,7 +43,7 @@ from .utils.anim import get_frame_markers
 
 
 class LFS_OT_Playblast(bpy.types.Operator):
-    """Group multiple plane layers from current camera into one"""
+    """Render playblast inside Blender"""
     bl_idname = "lfs.playblast"
     bl_label = "Playblast"
     bl_options = {'REGISTER', 'PRESET'}
