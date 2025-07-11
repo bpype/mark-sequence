@@ -1,0 +1,29 @@
+schema_version = "1.0.0"
+
+id = "lfs_playblast"
+version = "2.0.0"
+name = "LFS Playblast"
+tagline = "Playblast with right info"
+maintainer = "Les Fées Spéciales <voeu@les-fees-speciales.coop>"
+type = "add-on"
+website = "https://gitlab.com/lfs.coop/mark-sequence"
+tags = ["Render"]
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-2.0-or-later"]
+copyright = ["2020-2025 Les Fées Spéciales"]
+
+[permissions]
+files = "Render sequences to disk"
+
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  "/.git/",
+  "docs/",
+  ".*",
+  "*.blend",
+  "*.md",
+  "*.png",
+  "*.zip",
+]
