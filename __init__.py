@@ -107,6 +107,13 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
     template_path: bpy.props.StringProperty(name="Template", description="Custom marking field template", maxlen=1024)
 
+    @classmethod
+    def poll(cls, context):
+        if context.scene.camera is None:
+            cls.poll_message_set("No camera found in the current scene")
+            return False
+        return True
+
     def invoke(self, context, _event):
         """Copied from ExportHelper"""
         import os
