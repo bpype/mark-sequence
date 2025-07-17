@@ -49,6 +49,13 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
             f"F-Stop: {scene.camera.data.dof.aperture_fstop:3.3}"
         )
 
+    @classmethod
+    def poll(cls, context):
+        if not bpy.data.filepath:
+            cls.poll_message_set("The current blend file is unsaved")
+            return False
+        return True
+
     def invoke(self, context, _event):
         self.filepath = bpy.data.filepath.replace(".blend", "_movie.mov").replace(
             "_blend", "_movie_mov"
