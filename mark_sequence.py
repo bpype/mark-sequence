@@ -304,11 +304,17 @@ class SequenceMarker:
             ffmpeg_args.extend(["-c:a", "aac", "-b:a", "160k"])
             ffmpeg_args.extend(["-map", "0:0", "-map", "1:0"])
 
-        video_filter = ""
+        video_filter = "[0]"
+
         # If image res is odd, pad it by one pixel to allow h.264 encoding.
         # https://stackoverflow.com/q/20847674
-        if self.data["resolution_x"] % 2 or self.data["resolution_y"] % 2:
-            video_filter += "pad=ceil(iw/2)*2:ceil(ih/2)*2, "
+        video_filter += "pad=ceil(iw/2)*2:ceil(ih/2)*2[p], "
+
+        # Overlay video on alpha
+        # https://stackoverflow.com/a/52804884
+        video_filter += ("color=black, format=rgb24[c], "
+                         "[c][p]scale2ref[c][i],"
+                         "[c][i]overlay=format=auto:shortest=1, setsar=1[o], [o]")
 
         # # Background color
         # # FIXME: lookup ASS' way to calculate text height.
@@ -318,6 +324,7 @@ class SequenceMarker:
 
         # Subtitles
         video_filter += f"ass='{ass_path}'"
+
         ffmpeg_args.extend(["-vf", video_filter])
 
         # Video codec
