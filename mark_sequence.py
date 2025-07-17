@@ -274,6 +274,8 @@ class SequenceMarker:
         ass_descriptor, ass_path = mkstemp(suffix=".ass", text=True)
         with os.fdopen(ass_descriptor, 'w') as ass_file:
             ass_file.write(ass_text)
+        if platform.system() == "Windows":
+            ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
         return ass_path
 
     def mark_sequence(self):
@@ -315,7 +317,7 @@ class SequenceMarker:
         # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
 
         # Subtitles
-        video_filter += f"ass={ass_path}"
+        video_filter += f"ass='{ass_path}'"
         ffmpeg_args.extend(["-vf", video_filter])
 
         # Video codec
