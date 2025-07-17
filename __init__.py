@@ -408,6 +408,8 @@ class LFS_OT_Playblast(bpy.types.Operator):
         col.prop(self, "sequence")
         col.prop(self, "scene")
         col.prop(self, "version")
+
+        col = layout.column(align=True)
         col.prop(self, "template_path")
 
     # TODO execute marking in modal in background?
