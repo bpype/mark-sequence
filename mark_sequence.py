@@ -448,11 +448,14 @@ if __name__ == "__main__":
     sequence_marker = SequenceMarker(os.path.abspath(args.sequence), vars(args), template=template)
 
     # Get resolution from first image
+    # https://stackoverflow.com/a/29585066
     res = subprocess.check_output(
         [
-            "identify",
-            "-format",
-            "%wx%h",
+            "ffprobe",
+            "-v", "error",
+            "-select_streams", "v",
+            "-show_entries", "stream=width,height",
+            "-of", "csv=p=0:s=x",
             sequence_marker.file_sequence.frame(sequence_marker.frame_set[0]),
         ]
     )
