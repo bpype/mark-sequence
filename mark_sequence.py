@@ -10,6 +10,7 @@ import fileseq
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import textwrap
@@ -147,6 +148,15 @@ class SequenceMarker:
     def __init__(self, image_filepath, data, template=default_template):
         self.data = data
         self.template = template or default_template
+
+        match = re.search(r"(\d+)[^\d]*$", image_filepath)
+        if match is None:
+            print(f"No frame padding found for {image_filepath}.")
+            return
+
+        # Get file sequence by replacing last occuring number with @-padding.
+        padding = len(match.group(1))
+        image_filepath = re.sub(r"\d+([^\d]*)$", f"{'@' * padding}\g<1>", image_filepath)
 
         self.file_sequence = fileseq.findSequenceOnDisk(image_filepath, strictPadding=True)
         self.frame_set = self.file_sequence.frameSet()
