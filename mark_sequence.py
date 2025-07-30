@@ -476,4 +476,8 @@ if __name__ == "__main__":
     sequence_marker.data["resolution_x"] = int(res_x)
     sequence_marker.data["resolution_y"] = int(res_y)
 
+    # Get first frame from sequence if not specified manually
+    if sequence_marker.data["start_frame"] == -inf:
+        sequence_marker.data["start_frame"] = sequence_marker.frame_set[0]
+
     sequence_marker.mark_sequence()
