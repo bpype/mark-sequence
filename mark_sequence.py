@@ -34,7 +34,7 @@ default_template = {
             "string": " %s ",
         },
         {
-            "name": "sequence",
+            "name": "seq",
             "direction": "NorthWest",
             "string": "%s ",
         },
