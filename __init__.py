@@ -17,17 +17,17 @@ bl_info = {
 
 
 import bpy
-from bpy.app.translations import pgettext_data as data_
+import json
 import os
 import tempfile
-import json
+from bpy.app.translations import pgettext_data as data_
 from time import time
 
 from . import viewport_playblast
 from .mark_sequence import SequenceMarker
-from .utils.wm import find_area, find_region_3d, find_space
-from .utils.image import proxify, proxify_images
 from .utils.anim import get_frame_markers
+from .utils.image import proxify, proxify_images
+from .utils.wm import find_area, find_region_3d, find_space
 
 
 class LFS_OT_Playblast(bpy.types.Operator):

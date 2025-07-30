@@ -5,17 +5,17 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 
+import argparse
+import fileseq
+import json
 import os
 import platform
 import shutil
 import subprocess
-import json
-import argparse
-import fileseq
 import textwrap
-from tempfile import mkstemp
-from math import inf
 from concurrent.futures import ThreadPoolExecutor
+from math import inf
+from tempfile import mkstemp
 
 
 __all__ = ["default_template", "SequenceMarker"]
