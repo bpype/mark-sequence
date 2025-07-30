@@ -148,7 +148,7 @@ class SequenceMarker:
         self.data = data
         self.template = template or default_template
 
-        self.file_sequence = fileseq.findSequenceOnDisk(image_filepath)
+        self.file_sequence = fileseq.findSequenceOnDisk(image_filepath, strictPadding=True)
         self.frame_set = self.file_sequence.frameSet()
 
     def generate_ass_file(self):
