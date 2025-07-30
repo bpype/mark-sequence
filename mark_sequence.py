@@ -7,6 +7,7 @@
 
 import os
 import platform
+import shutil
 import subprocess
 import json
 import argparse
@@ -350,8 +351,10 @@ class SequenceMarker:
 
 if __name__ == "__main__":
     # Parse command line arguments
+    width = min(80, shutil.get_terminal_size().columns - 2)
+    formatter_class = lambda prog: argparse.RawDescriptionHelpFormatter(prog, width=width)
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=formatter_class,
         description=textwrap.indent(
             textwrap.dedent(
                 """\
