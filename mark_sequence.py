@@ -289,8 +289,11 @@ class SequenceMarker:
             ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
         return ass_path
 
-    def mark_sequence(self):
+    def mark_sequence(self, temp_render):
         ass_path = self.generate_ass_file()
+        if temp_render:
+            ass_path = None
+        
 
         if self.data["video_output"]:
             self.render_video(
@@ -325,16 +328,18 @@ class SequenceMarker:
         # https://stackoverflow.com/a/52804884
         video_filter += ("color=black, format=rgb24[c], "
                          "[c][p]scale2ref[c][i],"
-                         "[c][i]overlay=format=auto:shortest=1, setsar=1[o], [o]")
+                         "[c][i]overlay=format=auto:shortest=1, setsar=1[o]")
 
         # # Background color
         # # FIXME: lookup ASS' way to calculate text height.
         # height = self.template["settings"]["font_size"] * 2
         # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
         # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
-
-        # Subtitles
-        video_filter += f"ass='{ass_path}'"
+        
+        if ass_path:
+            video_filter += ",[o]"
+            # Subtitles
+            video_filter += f"ass='{ass_path}'"
 
         ffmpeg_args.extend(["-vf", video_filter])
 
@@ -344,8 +349,14 @@ class SequenceMarker:
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(["%s" % (destination)])
 
+        print(" ".join(ffmpeg_args))
+
         print("Generating video...")
-        proc = subprocess.run(ffmpeg_args, check=True, shell=platform.system() == "Windows")
+        try:
+            proc = subprocess.run(ffmpeg_args, check=True, shell=platform.system() == "Windows")
+        except subprocess.CalledProcessError as e:
+            print(e.returncode, e.cmd, e.stderr)
+            raise e
 
     @staticmethod
     def get_sequence_path(sequence):

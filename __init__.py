@@ -352,7 +352,13 @@ class LFS_OT_Playblast(bpy.types.Operator):
             sequence_marker = SequenceMarker(
                 os.path.join(tmpdir, "tmp_image.0000.tif"), data, template
             )
-            sequence_marker.mark_sequence()
+
+            temp_render = False
+
+            if self.template_path == "":
+                temp_render = True
+
+            sequence_marker.mark_sequence(temp_render)
 
             if self.do_autoplay:
                 sequence_marker.play_movie()
