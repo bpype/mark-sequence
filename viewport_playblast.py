@@ -218,13 +218,13 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         out_name = self.filepath
         dir_path = os.path.dirname(out_name)
 
-        if scene.camera is not None:
+        if context.scene.camera is not None:
             bpy.app.handlers.frame_change_pre.append(self.update)
 
         # Render animation from viewport
         bpy.ops.render.opengl(animation=True)
 
-        if scene.camera is not None:
+        if context.scene.camera is not None:
             bpy.app.handlers.frame_change_pre.remove(self.update)
 
         # Run animation playback
