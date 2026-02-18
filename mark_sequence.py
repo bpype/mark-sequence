@@ -344,7 +344,8 @@ class SequenceMarker:
         ffmpeg_args.extend(["-vf", video_filter])
 
         # Video codec
-        ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
+        ffmpeg_args.extend(["-c:v", "mjpeg", "-q:v", "3"])
+        # ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
 
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(["%s" % (destination)])
