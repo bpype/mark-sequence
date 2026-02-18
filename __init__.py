@@ -144,14 +144,22 @@ class LFS_OT_Playblast(bpy.types.Operator):
     def execute(self, context):
         start_time = time()
         with tempfile.TemporaryDirectory() as tmpdir:
-            render = context.scene.render
-            area = find_area(context)
-            space = area.spaces[0]
+            space = None
+            if not self.do_render:
+                area = find_area(context)
+                if area is None:
+                    self.report({'ERROR'}, "Area not found, cancelling render.")
+                    return {'CANCELLED'}
 
-            if hasattr(space, "region_3d"):
-                region_3d = space.region_3d
-            else:
-                region_3d = find_region_3d(context)
+                space = area.spaces[0]
+                if space is None:
+                    self.report({'ERROR'}, "Space not found, cancelling render.")
+                    return {'CANCELLED'}
+
+                if hasattr(space, "region_3d"):
+                    region_3d = space.region_3d
+                else:
+                    region_3d = find_region_3d(context)
 
             # Reduce texture sizes
             if self.do_reduce_textures:
@@ -167,6 +175,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 )
 
             # Store original render settings
+            render = context.scene.render
             orig_filepath = render.filepath
             orig_use_file_extension = render.use_file_extension
             orig_file_format = render.image_settings.file_format
