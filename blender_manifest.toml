@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "lfs_playblast"
-version = "2.0.0"
+version = "3.0.0"
 name = "LFS Playblast"
 tagline = "Playblast with right info"
 maintainer = "Les Fées Spéciales <voeu@les-fees-speciales.coop>"
