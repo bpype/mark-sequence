@@ -348,16 +348,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 data["audio_file"] = audio_path
 
             # Start sequence marker and movie creation
-
             sequence_marker = SequenceMarker(
                 os.path.join(tmpdir, "tmp_image.0000.tif"), data, template
             )
 
-            temp_render = False
-
-            if self.template_path == "":
-                temp_render = True
-
+            temp_render = (self.template_path == "")
             sequence_marker.mark_sequence(temp_render)
 
             if self.do_autoplay:

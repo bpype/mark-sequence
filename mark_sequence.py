@@ -293,7 +293,6 @@ class SequenceMarker:
         ass_path = self.generate_ass_file()
         if temp_render:
             ass_path = None
-        
 
         if self.data["video_output"]:
             self.render_video(
@@ -335,11 +334,10 @@ class SequenceMarker:
         # height = self.template["settings"]["font_size"] * 2
         # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
         # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
-        
-        if ass_path:
-            video_filter += ",[o]"
+
+        if ass_path is not None:
             # Subtitles
-            video_filter += f"ass='{ass_path}'"
+            video_filter += f",[o]ass='{ass_path}'"
 
         ffmpeg_args.extend(["-vf", video_filter])
 
