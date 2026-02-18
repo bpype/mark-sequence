@@ -319,7 +319,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             # Load in template from supplied json file. If none given, use default one.
             if self.template_path:
-                with open(os.path.abspath(self.template_path), "r") as f:
+                with open(os.path.abspath(bpy.path.abspath(self.template_path)), "r") as f:
                     template = json.load(f)
             else:
                 template = None
