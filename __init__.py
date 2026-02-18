@@ -64,7 +64,11 @@ class LFS_OT_Playblast(bpy.types.Operator):
     quality: bpy.props.EnumProperty(
         name="Quality",
         items=(('PREVIEW', "Preview", ""), ('FINAL', "Final", "")),
-        description="Use quality presets for the render settings",
+        description=(
+            "Use quality presets for the render settings.\n"
+            "Preview: Use Simplify. If rendering in viewport mode, force using the EEVEE engine.\n"
+            "Final: Do not use Simplify"
+        ),
         default='FINAL',
     )
 
