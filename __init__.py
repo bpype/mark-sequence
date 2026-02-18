@@ -105,7 +105,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         default=1,
     )
 
-    template_path: bpy.props.StringProperty(name="Template", description="Custom marking field template", maxlen=1024)
+    template_path: bpy.props.StringProperty(name="Template", description="Template for custom fields", maxlen=1024)
 
     @classmethod
     def poll(cls, context):
