@@ -340,7 +340,7 @@ class SequenceMarker:
 
         destination = os.path.abspath(self.data["video_output"])
         os.makedirs(os.path.dirname(destination), exist_ok=True)
-        ffmpeg_args.extend(["%s" % (destination)])
+        ffmpeg_args.append(destination)
 
         print("FFmpeg command:")
         print(" ".join(ffmpeg_args))
