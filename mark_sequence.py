@@ -348,6 +348,7 @@ class SequenceMarker:
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(["%s" % (destination)])
 
+        print("FFmpeg command:")
         print(" ".join(ffmpeg_args))
 
         print("Generating video...")
