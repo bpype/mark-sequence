@@ -1,6 +1,8 @@
-# SPDX-FileCopyrightText: 2020-2025 Les Fées Spéciales
+# SPDX-FileCopyrightText: 2020-2026 Les Fées Spéciales
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
+
+import bpy
 
 
 def proxify(img, target_width):
