@@ -11,7 +11,7 @@ tags = ["Render"]
 blender_version_min = "4.2.0"
 
 license = ["SPDX:GPL-2.0-or-later"]
-copyright = ["2020-2025 Les Fées Spéciales"]
+copyright = ["2020-2026 Les Fées Spéciales"]
 
 [permissions]
 files = "Render sequences to disk"
