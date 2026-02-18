@@ -205,8 +205,6 @@ class LFS_OT_Playblast(bpy.types.Operator):
             # TODO: Store workbench settings in preview quality mode
 
             orig_gl_texture_limit = context.preferences.system.gl_texture_limit
-            if space is not None:
-                orig_overlay = space.overlay.show_overlays
             view_layer_visibilities = {}
             collection_viewport_visibility = {}
             object_viewport_visibility = {}
@@ -237,6 +235,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             if not self.do_render:
                 if space is not None:
+                    orig_overlay = space.overlay.show_overlays
+                    orig_shading_type = space.shading.type
+
                     # Take camera's point of view
                     space.region_3d.view_perspective = 'CAMERA'
                     # Set shading to material preview
@@ -246,15 +247,24 @@ class LFS_OT_Playblast(bpy.types.Operator):
                     if self.do_hide_overlays:
                         space.overlay.show_overlays = False
                     else:
-                        space.overlay.show_overlays = True
+                        # Store original overlay settings
+                        orig_show_ortho_grid = space.overlay.show_ortho_grid
+                        orig_show_floor = space.overlay.show_floor
+                        orig_show_axis_x = space.overlay.show_axis_x
+                        orig_show_axis_y = space.overlay.show_axis_y
+                        orig_show_axis_z = space.overlay.show_axis_z
+                        orig_show_cursor = space.overlay.show_cursor
+                        orig_show_relationship_lines = space.overlay.show_relationship_lines
+                        orig_show_motion_paths = space.overlay.show_motion_paths
+                        orig_show_outline_selected = space.overlay.show_outline_selected
+                        orig_show_object_origins = space.overlay.show_object_origins
+
                         space.overlay.show_ortho_grid = False
                         space.overlay.show_floor = False
                         space.overlay.show_axis_x = False
                         space.overlay.show_axis_y = False
                         space.overlay.show_axis_z = False
                         space.overlay.show_cursor = False
-                        space.overlay.show_extras = False
-                        space.overlay.show_bones = False
                         space.overlay.show_relationship_lines = False
                         space.overlay.show_motion_paths = False
                         space.overlay.show_outline_selected = False
@@ -406,7 +416,20 @@ class LFS_OT_Playblast(bpy.types.Operator):
                         layer.use = view_layer_visibilities[layer.name]
             else:
                 if space is not None:
+                    # Restore viewport overlays
                     space.overlay.show_overlays = orig_overlay
+                    space.shading.type = orig_shading_type
+                    if not self.do_hide_overlays:
+                        space.overlay.show_ortho_grid = orig_show_ortho_grid
+                        space.overlay.show_floor = orig_show_floor
+                        space.overlay.show_axis_x = orig_show_axis_x
+                        space.overlay.show_axis_y = orig_show_axis_y
+                        space.overlay.show_axis_z = orig_show_axis_z
+                        space.overlay.show_cursor = orig_show_cursor
+                        space.overlay.show_relationship_lines = orig_show_relationship_lines
+                        space.overlay.show_motion_paths = orig_show_motion_paths
+                        space.overlay.show_outline_selected = orig_show_outline_selected
+                        space.overlay.show_object_origins = orig_show_object_origins
                 for c in bpy.data.collections:
                     c.hide_viewport = collection_viewport_visibility[c.name]
                 for o in bpy.data.objects:
