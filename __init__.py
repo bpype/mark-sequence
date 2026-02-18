@@ -112,7 +112,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         default=True,
     )
     template_path: bpy.props.StringProperty(
-        name="Template",
+        name="Template Path",
         description="Template for custom fields. If the path is empty, use the default template",
         maxlen=1024,
         subtype='FILE_PATH',
@@ -407,30 +407,35 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        col = layout.column()
-        col.prop(self, "do_render")
-        row = col.row()
-        row.active = self.do_render
-        row.prop(self, "do_single_layer")
-        col.prop(self, "do_hide_overlays")
-        # col.prop(self, "do_simplify")
-        col.prop(self, "quality")
-        col.prop(self, "do_reduce_textures")
-        col.prop(self, "do_export_audio")
-        col.prop(self, "resolution_percentage")
 
-        col = layout.column(align=True)
-        col.prop(self, "studio")
-        col.prop(self, "project")
-        col.prop(self, "sequence")
-        col.prop(self, "scene")
-        col.prop(self, "version")
+        header, body = layout.panel("LFS_MARK_SEQ_RENDERING")
+        header.label(text="Rendering")
+        if body:
+            col = body.column()
+            col.prop(self, "do_render")
+            if self.do_render:
+                col.prop(self, "do_single_layer")
+            else:
+                col.prop(self, "do_hide_overlays")
+            col.prop(self, "quality")
+            col.prop(self, "do_reduce_textures")
+            col.prop(self, "do_export_audio")
+            col.prop(self, "resolution_percentage")
 
-        col = layout.column(align=True)
-        col.prop(self, "do_mark_images")
-        row = col.row()
-        row.enabled = self.do_mark_images
-        row.prop(self, "template_path")
+        header, body = layout.panel("LFS_MARK_SEQ_METADATA")
+        header.prop(self, "do_mark_images", text="Mark Images")
+        if body:
+            col = body.column()
+            col.enabled = self.do_mark_images
+            col.prop(self, "template_path")
+
+            col = body.column(align=True)
+            col.enabled = self.do_mark_images
+            col.prop(self, "studio")
+            col.prop(self, "project")
+            col.prop(self, "sequence")
+            col.prop(self, "scene")
+            col.prop(self, "version")
 
     # TODO execute marking in modal in background?
     # def modal(self, context):
