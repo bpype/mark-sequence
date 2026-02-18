@@ -340,7 +340,6 @@ class LFS_OT_Playblast(bpy.types.Operator):
             if self.do_render:
                 bpy.ops.render.render(animation=True)
             else:
-                # bpy.ops.render.opengl(animation=True, view_context=False)
                 with bpy.context.temp_override(area=area):
                     bpy.ops.render.opengl(animation=True)
 
