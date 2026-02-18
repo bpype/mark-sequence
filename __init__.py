@@ -87,6 +87,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         name="Resolution Percentage",
         description="Scale the render resolution according to this percentage",
         default=100,
+        min=0,
     )
     do_autoplay: bpy.props.BoolProperty(
         name="Autoplay",
