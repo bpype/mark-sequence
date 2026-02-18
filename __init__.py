@@ -90,7 +90,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
     )
     do_autoplay: bpy.props.BoolProperty(
         name="Autoplay",
-        description="Auto Play playblast when render is finished",
+        description="Auto play playblast when render is finished",
         default=True,
     )
 
