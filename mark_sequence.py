@@ -289,19 +289,11 @@ class SequenceMarker:
             ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
         return ass_path
 
-    def mark_sequence(self, temp_render):
-        ass_path = self.generate_ass_file()
-        if temp_render:
-            ass_path = None
+    def render_video(self, do_mark_images=True):
+        if not self.data["video_output"]:
+            return
 
-        if self.data["video_output"]:
-            self.render_video(
-                self.get_sequence_path(self.file_sequence),
-                os.path.abspath(self.data["video_output"]),
-                ass_path=ass_path,
-            )
-
-    def render_video(self, img_sources, destination, ass_path):
+        img_sources = self.get_sequence_path(self.file_sequence)
         first_frame = self.data.get("start_frame")
         frame_rate = self.data.get("frame_rate", 25)
         audio_file = self.data.get("audio_file")
@@ -335,8 +327,9 @@ class SequenceMarker:
         # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
         # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
 
-        if ass_path is not None:
+        if do_mark_images:
             # Subtitles
+            ass_path = self.generate_ass_file()
             video_filter += f",[o]ass='{ass_path}'"
 
         ffmpeg_args.extend(["-vf", video_filter])
@@ -345,6 +338,7 @@ class SequenceMarker:
         ffmpeg_args.extend(["-c:v", "mjpeg", "-q:v", "3"])
         # ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
 
+        destination = os.path.abspath(self.data["video_output"])
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.extend(["%s" % (destination)])
 
@@ -491,4 +485,4 @@ if __name__ == "__main__":
     if sequence_marker.data["start_frame"] == -inf:
         sequence_marker.data["start_frame"] = sequence_marker.frame_set[0]
 
-    sequence_marker.mark_sequence()
+    sequence_marker.render_video()

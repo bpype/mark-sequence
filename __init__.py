@@ -94,6 +94,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
         default=True,
     )
 
+    # Metadata
     studio: bpy.props.StringProperty(name="Studio", description="Studio name")
     project: bpy.props.StringProperty(name="Project", description="Project name")
     sequence: bpy.props.StringProperty(name="Sequence", description="Sequence number")
@@ -105,9 +106,14 @@ class LFS_OT_Playblast(bpy.types.Operator):
         default=1,
     )
 
+    do_mark_images: bpy.props.BoolProperty(
+        name="Mark Images",
+        description="Mark information on the rendered images",
+        default=True,
+    )
     template_path: bpy.props.StringProperty(
         name="Template",
-        description="Template for custom fields",
+        description="Template for custom fields. If the path is empty, use the default template",
         maxlen=1024,
         subtype='FILE_PATH',
     )
@@ -357,11 +363,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
                 os.path.join(tmpdir, "tmp_image.0000.tif"), data, template
             )
 
-            temp_render = (self.template_path == "")
-            sequence_marker.mark_sequence(temp_render)
-
             if self.do_autoplay:
                 sequence_marker.play_movie()
+            sequence_marker.render_video(self.do_mark_images)
 
             # Restore original render settings
             render.filepath = orig_filepath
@@ -423,7 +427,10 @@ class LFS_OT_Playblast(bpy.types.Operator):
         col.prop(self, "version")
 
         col = layout.column(align=True)
-        col.prop(self, "template_path")
+        col.prop(self, "do_mark_images")
+        row = col.row()
+        row.enabled = self.do_mark_images
+        row.prop(self, "template_path")
 
     # TODO execute marking in modal in background?
     # def modal(self, context):
