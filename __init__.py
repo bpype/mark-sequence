@@ -123,6 +123,13 @@ class LFS_OT_Playblast(bpy.types.Operator):
         subtype='FILE_PATH',
     )
 
+    video_codec: bpy.props.EnumProperty(
+        name="Video Codec",
+        items=(('MJPEG', "MJPEG", ""), ('H264', "h.264", "")),
+        description=("Codec used to encode the video file."),
+        default='MJPEG',
+    )
+
     @classmethod
     def poll(cls, context):
         if context.scene.camera is None:
@@ -394,7 +401,7 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
             if self.do_autoplay:
                 sequence_marker.play_movie()
-            sequence_marker.render_video(self.do_mark_images)
+            sequence_marker.render_video(self.do_mark_images, self.video_codec)
 
             # Restore original render settings
             render.filepath = orig_filepath
@@ -453,16 +460,21 @@ class LFS_OT_Playblast(bpy.types.Operator):
         header, body = layout.panel("LFS_MARK_SEQ_RENDERING")
         header.label(text="Rendering")
         if body:
-            col = body.column()
+            col = body.column(align=True)
             col.prop(self, "do_render")
             if self.do_render:
                 col.prop(self, "do_single_layer")
             else:
                 col.prop(self, "do_hide_overlays")
+
+            col = body.column(align=True)
             col.prop(self, "quality")
             col.prop(self, "do_reduce_textures")
             col.prop(self, "do_export_audio")
             col.prop(self, "resolution_percentage")
+
+            col = body.column(align=True)
+            col.prop(self, "video_codec")
 
         header, body = layout.panel("LFS_MARK_SEQ_METADATA")
         header.prop(self, "do_mark_images", text="Mark Images")

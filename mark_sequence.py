@@ -289,7 +289,7 @@ class SequenceMarker:
             ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
         return ass_path
 
-    def render_video(self, do_mark_images=True):
+    def render_video(self, do_mark_images=True, video_codec='MJPEG'):
         if not self.data["video_output"]:
             return
 
@@ -335,8 +335,10 @@ class SequenceMarker:
         ffmpeg_args.extend(["-vf", video_filter])
 
         # Video codec
-        ffmpeg_args.extend(["-c:v", "mjpeg", "-q:v", "3"])
-        # ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
+        if video_codec == 'MJPEG':
+            ffmpeg_args.extend(["-c:v", "mjpeg", "-q:v", "3"])
+        elif video_codec == 'H264':
+            ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
 
         destination = os.path.abspath(self.data["video_output"])
         os.makedirs(os.path.dirname(destination), exist_ok=True)
