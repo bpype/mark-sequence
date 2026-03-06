@@ -338,7 +338,17 @@ class SequenceMarker:
         if video_codec == 'MJPEG':
             ffmpeg_args.extend(["-c:v", "mjpeg", "-q:v", "3"])
         elif video_codec == 'H264':
-            ffmpeg_args.extend(["-c:v", "h264", "-crf", "21", "-preset", "slow", "-pix_fmt", "yuv420p", "-movflags", "+faststart"])
+            ffmpeg_args.extend([
+                "-c:v", "h264",
+                "-crf", "21",
+                "-preset", "slow",
+                "-pix_fmt", "yuv420p",
+                "-colorspace", "bt709",
+                "-color_trc", "bt709",
+                "-color_primaries", "bt709",
+                "-movflags", "+faststart",
+                "-x264-params", "keyint=1",
+            ])
 
         destination = os.path.abspath(self.data["video_output"])
         os.makedirs(os.path.dirname(destination), exist_ok=True)
