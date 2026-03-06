@@ -289,7 +289,7 @@ class SequenceMarker:
             ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
         return ass_path
 
-    def render_video(self, do_mark_images=True, video_codec='MJPEG'):
+    def render_video(self, do_mark_images=True, video_codec='H264'):
         if not self.data["video_output"]:
             return
 

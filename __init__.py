@@ -125,9 +125,9 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
     video_codec: bpy.props.EnumProperty(
         name="Video Codec",
-        items=(('MJPEG', "MJPEG", ""), ('H264', "h.264", "")),
+        items=(('H264', "h.264", ""), ('MJPEG', "MJPEG", "")),
         description=("Codec used to encode the video file."),
-        default='MJPEG',
+        default='H264',
     )
 
     @classmethod
