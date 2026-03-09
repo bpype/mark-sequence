@@ -350,6 +350,9 @@ class SequenceMarker:
                 "-x264-params", "keyint=1",
             ])
 
+        # Output frame rate
+        ffmpeg_args.extend(["-r", str(frame_rate)])
+
         destination = os.path.abspath(self.data["video_output"])
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         ffmpeg_args.append(destination)
