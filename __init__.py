@@ -37,6 +37,13 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     bl_label = "Playblast"
     bl_options = {'REGISTER', 'PRESET'}
 
+    image_sequence_path: bpy.props.StringProperty(
+        name="Image Sequence Path",
+        description="Path to an image sequence. If left empty, a temporary image sequence will be created",
+        maxlen=1024,
+        subtype='FILE_PATH'
+    )
+
     filename_ext = ".mov"
     filter_glob: bpy.props.StringProperty(default="*.mov;*.mp4", options={'HIDDEN'})
     check_extension = None
@@ -145,7 +152,15 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             return {'CANCELLED'}
 
         start_time = time()
-        tmpdir = tempfile.TemporaryDirectory()
+        if self.image_sequence_path:
+            image_sequence_dir, image_sequence_name = os.path.split(self.image_sequence_path)
+            if not image_sequence_name.endswith("."):
+                image_sequence_name += "."
+        else:
+            tmpdir = tempfile.TemporaryDirectory()
+            image_sequence_dir = tmpdir.name
+            image_sequence_name = "temp."
+
         space = None
         if not self.do_render:
             area = find_area(context)
@@ -217,10 +232,13 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                 object_viewport_visibility[o.name] = o.hide_viewport
 
         # Setup render settings
-        render.filepath = os.path.join(tmpdir.name, "tmp_image.")
+        render.filepath = os.path.join(image_sequence_dir, image_sequence_name)
         render.resolution_percentage = 100
         render.use_file_extension = True
-        render.image_settings.file_format = 'TIFF'
+        if self.image_sequence_path:
+            render.image_settings.file_format = 'PNG'
+        else:
+            render.image_settings.file_format = 'TIFF'
         render.image_settings.color_depth = '8'
         render.resolution_percentage = self.resolution_percentage
         render.use_simplify = self.quality == 'PREVIEW'
@@ -373,7 +391,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         # Export Audio if needed
         if self.do_export_audio:
             print("Exporting Audio")
-            audio_path = os.path.join(tmpdir.name, "sound.mp3")
+            audio_path = os.path.join(image_sequence_dir, f"{image_sequence_name}mp3")
             bpy.ops.sound.mixdown(
                 filepath=audio_path,
                 relative_path=False,
@@ -387,7 +405,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
         # Start sequence marker and movie creation
         sequence_marker = SequenceMarker(
-            os.path.join(tmpdir.name, "tmp_image.0000.tif"), data, template
+            os.path.join(image_sequence_dir, f"{image_sequence_name}0000.{render.image_settings.file_format[:3].lower()}"), data, template
         )
 
         if self.do_autoplay:
@@ -442,7 +460,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         render.use_sequencer = orig_use_sequencer
         render.use_stamp = orig_use_stamp
 
-        tmpdir.cleanup()
+        if not self.image_sequence_path:
+            tmpdir.cleanup()
 
         print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
@@ -453,6 +472,9 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         header, body = layout.panel("LFS_MARK_SEQ_RENDERING")
         header.label(text="Rendering")
         if body:
+            col = body.column(align=True)
+            col.prop(self, "image_sequence_path")
+
             col = body.column(align=True)
             col.prop(self, "do_render")
             if self.do_render:
