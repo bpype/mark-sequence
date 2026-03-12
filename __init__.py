@@ -38,7 +38,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     bl_options = {'REGISTER', 'PRESET'}
 
     filename_ext = ".mov"
-    filter_glob: bpy.props.StringProperty(default="*.mov", options={'HIDDEN'})
+    filter_glob: bpy.props.StringProperty(default="*.mov;*.mp4", options={'HIDDEN'})
     check_extension = None
     check_existing: bpy.props.BoolProperty(
         name="Check Existing",
