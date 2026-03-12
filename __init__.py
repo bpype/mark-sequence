@@ -21,6 +21,7 @@ import json
 import os
 import tempfile
 from bpy.app.translations import pgettext_data as data_
+from bpy_extras.io_utils import ExportHelper
 from time import time
 
 from . import viewport_playblast
@@ -30,17 +31,15 @@ from .utils.image import proxify, proxify_images
 from .utils.wm import find_area, find_region_3d, find_space
 
 
-class LFS_OT_Playblast(bpy.types.Operator):
+class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
     """Render playblast inside Blender"""
     bl_idname = "lfs.playblast"
     bl_label = "Playblast"
     bl_options = {'REGISTER', 'PRESET'}
 
-    filepath: bpy.props.StringProperty(
-        maxlen=1024, subtype='FILE_PATH', options={'HIDDEN', 'SKIP_SAVE'}
-    )
     filename_ext = ".mov"
     filter_glob: bpy.props.StringProperty(default="*.mov", options={'HIDDEN'})
+    check_extension = None
     check_existing: bpy.props.BoolProperty(
         name="Check Existing",
         description="Check and warn on overwriting existing files",
@@ -136,21 +135,6 @@ class LFS_OT_Playblast(bpy.types.Operator):
             cls.poll_message_set("No camera found in the current scene")
             return False
         return True
-
-    def invoke(self, context, _event):
-        """Copied from ExportHelper"""
-        import os
-        if not self.filepath:
-            blend_filepath = context.blend_data.filepath
-            if not blend_filepath:
-                blend_filepath = data_("Untitled")
-            else:
-                blend_filepath = os.path.splitext(blend_filepath)[0]
-
-            self.filepath = bpy.path.ensure_ext(blend_filepath, ".mov")
-
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
 
     def execute(self, context):
         start_time = time()
