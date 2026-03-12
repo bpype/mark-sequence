@@ -154,304 +154,306 @@ class LFS_OT_Playblast(bpy.types.Operator):
 
     def execute(self, context):
         start_time = time()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            space = None
-            if not self.do_render:
-                area = find_area(context)
-                if area is None:
-                    self.report({'ERROR'}, "Area not found, cancelling render.")
-                    return {'CANCELLED'}
+        tmpdir = tempfile.TemporaryDirectory()
+        space = None
+        if not self.do_render:
+            area = find_area(context)
+            if area is None:
+                self.report({'ERROR'}, "Area not found, cancelling render.")
+                return {'CANCELLED'}
 
-                space = area.spaces[0]
-                if space is None:
-                    self.report({'ERROR'}, "Space not found, cancelling render.")
-                    return {'CANCELLED'}
+            space = area.spaces[0]
+            if space is None:
+                self.report({'ERROR'}, "Space not found, cancelling render.")
+                return {'CANCELLED'}
 
-                if hasattr(space, "region_3d"):
-                    region_3d = space.region_3d
-                else:
-                    region_3d = find_region_3d(context)
-
-            # Reduce texture sizes
-            if self.do_reduce_textures:
-                print("Reducing textures")
-                proxify_images(context, self.target_texture_width)
-
-            # Compare scene frame count and frame count set on Kitsu
-            frame_total = context.scene.frame_end - context.scene.frame_start + 1
-            if self.frame_count > frame_total:
-                self.report(
-                    {'WARNING'},
-                    f"File is missing {self.frame_count - frame_total} frames to render (Expected : {self.frame_count})",
-                )
-
-            # Store original render settings
-            render = context.scene.render
-            orig_filepath = render.filepath
-            orig_use_file_extension = render.use_file_extension
-            orig_file_format = render.image_settings.file_format
-            orig_color_depth = render.image_settings.color_depth
-            orig_resolution_percentage = render.resolution_percentage
-            orig_simplify = render.use_simplify
-            orig_simplify_subdivision = render.simplify_subdivision
-            orig_simplify_subdivision_render = render.simplify_subdivision_render
-            orig_taa_render_samples = context.scene.eevee.taa_render_samples
-            orig_taa_samples = context.scene.eevee.taa_samples
-
-            orig_use_preview_range = context.scene.use_preview_range
-
-            orig_use_sequencer = render.use_sequencer
-            orig_use_stamp = render.use_stamp
-
-            # Store original animatic statuses
-            for sequence in context.scene.sequence_editor.sequences:
-                if sequence.type == 'MOVIE':
-                    sequence["_muted"] = sequence.mute
-                    sequence.mute = True
-
-            # TODO: Store workbench settings in preview quality mode
-
-            orig_gl_texture_limit = context.preferences.system.gl_texture_limit
-            view_layer_visibilities = {}
-            collection_viewport_visibility = {}
-            object_viewport_visibility = {}
-            if self.do_render:
-                if self.do_single_layer:
-                    for layer in context.scene.view_layers:
-                        view_layer_visibilities[layer.name] = layer.use
+            if hasattr(space, "region_3d"):
+                region_3d = space.region_3d
             else:
-                for c in bpy.data.collections:
-                    collection_viewport_visibility[c.name] = c.hide_viewport
-                for o in bpy.data.objects:
-                    object_viewport_visibility[o.name] = o.hide_viewport
+                region_3d = find_region_3d(context)
 
-            # Setup render settings
-            render.filepath = os.path.join(tmpdir, "tmp_image.")
-            render.resolution_percentage = 100
-            render.use_file_extension = True
-            render.image_settings.file_format = 'TIFF'
-            render.image_settings.color_depth = '8'
-            render.resolution_percentage = self.resolution_percentage
-            render.use_simplify = self.quality == 'PREVIEW'
-            render.simplify_subdivision = 1
-            render.simplify_subdivision_render = 1
-            render.simplify_child_particles_render = 0.0
+        # Reduce texture sizes
+        if self.do_reduce_textures:
+            print("Reducing textures")
+            proxify_images(context, self.target_texture_width)
 
-            if self.quality == 'PREVIEW':
-                render.engine = 'BLENDER_EEVEE_NEXT'
-
-            if not self.do_render:
-                if space is not None:
-                    orig_overlay = space.overlay.show_overlays
-                    orig_shading_type = space.shading.type
-
-                    # Take camera's point of view
-                    space.region_3d.view_perspective = 'CAMERA'
-                    # Set shading to material preview
-                    space.shading.type = 'MATERIAL'
-
-                    # Overlays
-                    if self.do_hide_overlays:
-                        space.overlay.show_overlays = False
-                    else:
-                        # Store original overlay settings
-                        orig_show_ortho_grid = space.overlay.show_ortho_grid
-                        orig_show_floor = space.overlay.show_floor
-                        orig_show_axis_x = space.overlay.show_axis_x
-                        orig_show_axis_y = space.overlay.show_axis_y
-                        orig_show_axis_z = space.overlay.show_axis_z
-                        orig_show_cursor = space.overlay.show_cursor
-                        orig_show_relationship_lines = space.overlay.show_relationship_lines
-                        orig_show_motion_paths = space.overlay.show_motion_paths
-                        orig_show_outline_selected = space.overlay.show_outline_selected
-                        orig_show_object_origins = space.overlay.show_object_origins
-
-                        space.overlay.show_ortho_grid = False
-                        space.overlay.show_floor = False
-                        space.overlay.show_axis_x = False
-                        space.overlay.show_axis_y = False
-                        space.overlay.show_axis_z = False
-                        space.overlay.show_cursor = False
-                        space.overlay.show_relationship_lines = False
-                        space.overlay.show_motion_paths = False
-                        space.overlay.show_outline_selected = False
-                        space.overlay.show_object_origins = False
-
-                # Configure camera background image
-                context.scene.camera.data.show_background_images = True
-                if len(context.scene.camera.data.background_images) > 0:
-                    img = context.scene.camera.data.background_images[0]
-                    img.alpha = 1.0
-                    img.display_depth = 'BACK'
-                    img.frame_method = 'STRETCH'
-
-                # Transfer render visibility to viewport visibility
-                for c in bpy.data.collections:
-                    c.hide_viewport = c.hide_render
-                for o in bpy.data.objects:
-                    o.hide_viewport = o.hide_render
-
-                # Use a low number of samples
-                context.scene.eevee.taa_samples = 4
-
-            # Disable metadata burning
-            render.use_sequencer = False
-            render.use_stamp = False
-
-            if self.do_render and self.do_single_layer:
-                for layer in context.scene.view_layers:
-                    if "View Layer" in context.scene.view_layers:
-                        layer.use = (layer.name == "View Layer")
-                    else:
-                        layer.use = (layer == context.view_layer)
-
-            out_name = self.filepath
-            dir_path = os.path.dirname(out_name)
-
-            os.makedirs(dir_path, exist_ok=True)
-
-            context.scene.use_preview_range = False
-
-            # Get animated properties, store them in a dict
-            lens = {}
-            fstop = {}
-            markers = get_frame_markers(context)
-            previous_frame = context.scene.frame_current
-            for f in range(context.scene.frame_start, context.scene.frame_end + 1):
-                context.scene.frame_set(f)
-                # Focal length is dependent upon 3D view state
-                fstop[f] = f"{context.scene.camera.data.dof.aperture_fstop:.3}"
-                if self.do_render:
-                    lens[f] = context.scene.camera.data.lens
-                else:
-                    lens[f] = (
-                        context.scene.camera.data.lens
-                        if region_3d is not None
-                        and region_3d.view_perspective == 'CAMERA'
-                        else space.lens
-                    )
-                # Skip decimal precision, we probably don't need that
-                lens[f] = round(lens[f])
-
-            context.scene.frame_set(previous_frame)
-
-            # Define marker data
-            data = {
-                "video_output": out_name,
-                "resolution_x": render.resolution_x * render.resolution_percentage // 100,
-                "resolution_y": render.resolution_y * render.resolution_percentage // 100,
-                "start_frame": context.scene.frame_start,
-                "end_frame": context.scene.frame_end,
-                "offset": 0,
-                "project": "",
-                "version": "",
-                "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
-                                         render.resolution_y * render.resolution_percentage // 100,
-                ),
-                "focal_length": lens,
-                "fstop": fstop,
-                "timeline_marker": markers,
-                "file_name": os.path.basename(bpy.data.filepath),
-                "audio_file": None,
-                "frame_rate": render.fps / render.fps_base,
-                "quality": "Quality: " + self.quality,
-            }
-
-            # Get data from environment variables
-            # TODO automate list of vars to look up
-            for field in ("studio", "project", "sequence", "scene", "version"):
-                if getattr(self, field):
-                    data[field] = getattr(self, field)
-                elif field in os.environ:
-                    data[field] = os.environ[field]
-
-            # Load in template from supplied json file. If none given, use default one.
-            if self.template_path:
-                with open(os.path.abspath(bpy.path.abspath(self.template_path)), "r") as f:
-                    template = json.load(f)
-            else:
-                template = None
-
-            # Render animation from viewport
-            if self.do_render:
-                bpy.ops.render.render(animation=True)
-            else:
-                with bpy.context.temp_override(area=area):
-                    bpy.ops.render.opengl(animation=True)
-
-            # Export Audio if needed
-            if self.do_export_audio:
-                print("Exporting Audio")
-                audio_path = os.path.join(tmpdir, "sound.mp3")
-                bpy.ops.sound.mixdown(
-                    filepath=audio_path,
-                    relative_path=False,
-                    container='MP3',
-                    codec='MP3',
-                    format='S32',
-                    bitrate=256,
-                    accuracy=512,
-                )
-                data["audio_file"] = audio_path
-
-            # Start sequence marker and movie creation
-            sequence_marker = SequenceMarker(
-                os.path.join(tmpdir, "tmp_image.0000.tif"), data, template
+        # Compare scene frame count and frame count set on Kitsu
+        frame_total = context.scene.frame_end - context.scene.frame_start + 1
+        if self.frame_count > frame_total:
+            self.report(
+                {'WARNING'},
+                f"File is missing {self.frame_count - frame_total} frames to render (Expected : {self.frame_count})",
             )
 
-            if self.do_autoplay:
-                sequence_marker.play_movie()
-            sequence_marker.render_video(self.do_mark_images, self.video_codec)
+        # Store original render settings
+        render = context.scene.render
+        orig_filepath = render.filepath
+        orig_use_file_extension = render.use_file_extension
+        orig_file_format = render.image_settings.file_format
+        orig_color_depth = render.image_settings.color_depth
+        orig_resolution_percentage = render.resolution_percentage
+        orig_simplify = render.use_simplify
+        orig_simplify_subdivision = render.simplify_subdivision
+        orig_simplify_subdivision_render = render.simplify_subdivision_render
+        orig_taa_render_samples = context.scene.eevee.taa_render_samples
+        orig_taa_samples = context.scene.eevee.taa_samples
 
-            # Restore original render settings
-            render.filepath = orig_filepath
-            render.use_file_extension = orig_use_file_extension
-            render.image_settings.file_format = orig_file_format
-            render.image_settings.color_depth = orig_color_depth
-            render.resolution_percentage = orig_resolution_percentage
-            render.use_simplify = orig_simplify
-            render.simplify_subdivision = orig_simplify_subdivision
-            render.simplify_subdivision_render = orig_simplify_subdivision_render
-            context.scene.eevee.taa_render_samples = orig_taa_render_samples
-            context.scene.eevee.taa_samples = orig_taa_samples
-            context.preferences.system.gl_texture_limit = orig_gl_texture_limit
-            context.scene.use_preview_range = orig_use_preview_range
+        orig_use_preview_range = context.scene.use_preview_range
 
+        orig_use_sequencer = render.use_sequencer
+        orig_use_stamp = render.use_stamp
+
+        # Store original animatic statuses
+        for sequence in context.scene.sequence_editor.sequences:
+            if sequence.type == 'MOVIE':
+                sequence["_muted"] = sequence.mute
+                sequence.mute = True
+
+        # TODO: Store workbench settings in preview quality mode
+
+        orig_gl_texture_limit = context.preferences.system.gl_texture_limit
+        view_layer_visibilities = {}
+        collection_viewport_visibility = {}
+        object_viewport_visibility = {}
+        if self.do_render:
+            if self.do_single_layer:
+                for layer in context.scene.view_layers:
+                    view_layer_visibilities[layer.name] = layer.use
+        else:
+            for c in bpy.data.collections:
+                collection_viewport_visibility[c.name] = c.hide_viewport
+            for o in bpy.data.objects:
+                object_viewport_visibility[o.name] = o.hide_viewport
+
+        # Setup render settings
+        render.filepath = os.path.join(tmpdir.name, "tmp_image.")
+        render.resolution_percentage = 100
+        render.use_file_extension = True
+        render.image_settings.file_format = 'TIFF'
+        render.image_settings.color_depth = '8'
+        render.resolution_percentage = self.resolution_percentage
+        render.use_simplify = self.quality == 'PREVIEW'
+        render.simplify_subdivision = 1
+        render.simplify_subdivision_render = 1
+        render.simplify_child_particles_render = 0.0
+
+        if self.quality == 'PREVIEW':
+            render.engine = 'BLENDER_EEVEE_NEXT'
+
+        if not self.do_render:
+            if space is not None:
+                orig_overlay = space.overlay.show_overlays
+                orig_shading_type = space.shading.type
+
+                # Take camera's point of view
+                space.region_3d.view_perspective = 'CAMERA'
+                # Set shading to material preview
+                space.shading.type = 'MATERIAL'
+
+                # Overlays
+                if self.do_hide_overlays:
+                    space.overlay.show_overlays = False
+                else:
+                    # Store original overlay settings
+                    orig_show_ortho_grid = space.overlay.show_ortho_grid
+                    orig_show_floor = space.overlay.show_floor
+                    orig_show_axis_x = space.overlay.show_axis_x
+                    orig_show_axis_y = space.overlay.show_axis_y
+                    orig_show_axis_z = space.overlay.show_axis_z
+                    orig_show_cursor = space.overlay.show_cursor
+                    orig_show_relationship_lines = space.overlay.show_relationship_lines
+                    orig_show_motion_paths = space.overlay.show_motion_paths
+                    orig_show_outline_selected = space.overlay.show_outline_selected
+                    orig_show_object_origins = space.overlay.show_object_origins
+
+                    space.overlay.show_ortho_grid = False
+                    space.overlay.show_floor = False
+                    space.overlay.show_axis_x = False
+                    space.overlay.show_axis_y = False
+                    space.overlay.show_axis_z = False
+                    space.overlay.show_cursor = False
+                    space.overlay.show_relationship_lines = False
+                    space.overlay.show_motion_paths = False
+                    space.overlay.show_outline_selected = False
+                    space.overlay.show_object_origins = False
+
+            # Configure camera background image
+            context.scene.camera.data.show_background_images = True
+            if len(context.scene.camera.data.background_images) > 0:
+                img = context.scene.camera.data.background_images[0]
+                img.alpha = 1.0
+                img.display_depth = 'BACK'
+                img.frame_method = 'STRETCH'
+
+            # Transfer render visibility to viewport visibility
+            for c in bpy.data.collections:
+                c.hide_viewport = c.hide_render
+            for o in bpy.data.objects:
+                o.hide_viewport = o.hide_render
+
+            # Use a low number of samples
+            context.scene.eevee.taa_samples = 4
+
+        # Disable metadata burning
+        render.use_sequencer = False
+        render.use_stamp = False
+
+        if self.do_render and self.do_single_layer:
+            for layer in context.scene.view_layers:
+                if "View Layer" in context.scene.view_layers:
+                    layer.use = (layer.name == "View Layer")
+                else:
+                    layer.use = (layer == context.view_layer)
+
+        out_name = self.filepath
+        dir_path = os.path.dirname(out_name)
+
+        os.makedirs(dir_path, exist_ok=True)
+
+        context.scene.use_preview_range = False
+
+        # Get animated properties, store them in a dict
+        lens = {}
+        fstop = {}
+        markers = get_frame_markers(context)
+        previous_frame = context.scene.frame_current
+        for f in range(context.scene.frame_start, context.scene.frame_end + 1):
+            context.scene.frame_set(f)
+            # Focal length is dependent upon 3D view state
+            fstop[f] = f"{context.scene.camera.data.dof.aperture_fstop:.3}"
             if self.do_render:
-                if self.do_single_layer:
-                    for layer in context.scene.view_layers:
-                        layer.use = view_layer_visibilities[layer.name]
+                lens[f] = context.scene.camera.data.lens
             else:
-                if space is not None:
-                    # Restore viewport overlays
-                    space.overlay.show_overlays = orig_overlay
-                    space.shading.type = orig_shading_type
-                    if not self.do_hide_overlays:
-                        space.overlay.show_ortho_grid = orig_show_ortho_grid
-                        space.overlay.show_floor = orig_show_floor
-                        space.overlay.show_axis_x = orig_show_axis_x
-                        space.overlay.show_axis_y = orig_show_axis_y
-                        space.overlay.show_axis_z = orig_show_axis_z
-                        space.overlay.show_cursor = orig_show_cursor
-                        space.overlay.show_relationship_lines = orig_show_relationship_lines
-                        space.overlay.show_motion_paths = orig_show_motion_paths
-                        space.overlay.show_outline_selected = orig_show_outline_selected
-                        space.overlay.show_object_origins = orig_show_object_origins
-                for c in bpy.data.collections:
-                    c.hide_viewport = collection_viewport_visibility[c.name]
-                for o in bpy.data.objects:
-                    o.hide_viewport = object_viewport_visibility[o.name]
+                lens[f] = (
+                    context.scene.camera.data.lens
+                    if region_3d is not None
+                    and region_3d.view_perspective == 'CAMERA'
+                    else space.lens
+                )
+            # Skip decimal precision, we probably don't need that
+            lens[f] = round(lens[f])
 
-            # Restore original animatic statuses
-            for sequence in context.scene.sequence_editor.sequences:
-                if sequence.type == 'MOVIE':
-                    sequence.mute = sequence["_muted"]
-                    del sequence["_muted"]
+        context.scene.frame_set(previous_frame)
 
-            render.use_sequencer = orig_use_sequencer
-            render.use_stamp = orig_use_stamp
+        # Define marker data
+        data = {
+            "video_output": out_name,
+            "resolution_x": render.resolution_x * render.resolution_percentage // 100,
+            "resolution_y": render.resolution_y * render.resolution_percentage // 100,
+            "start_frame": context.scene.frame_start,
+            "end_frame": context.scene.frame_end,
+            "offset": 0,
+            "project": "",
+            "version": "",
+            "resolution": "%s×%s" % (render.resolution_x * render.resolution_percentage // 100,
+                                        render.resolution_y * render.resolution_percentage // 100,
+            ),
+            "focal_length": lens,
+            "fstop": fstop,
+            "timeline_marker": markers,
+            "file_name": os.path.basename(bpy.data.filepath),
+            "audio_file": None,
+            "frame_rate": render.fps / render.fps_base,
+            "quality": "Quality: " + self.quality,
+        }
 
-            print("Rendered playblast in %01.1fs" % (time() - start_time))
+        # Get data from environment variables
+        # TODO automate list of vars to look up
+        for field in ("studio", "project", "sequence", "scene", "version"):
+            if getattr(self, field):
+                data[field] = getattr(self, field)
+            elif field in os.environ:
+                data[field] = os.environ[field]
+
+        # Load in template from supplied json file. If none given, use default one.
+        if self.template_path:
+            with open(os.path.abspath(bpy.path.abspath(self.template_path)), "r") as f:
+                template = json.load(f)
+        else:
+            template = None
+
+        # Render animation from viewport
+        if self.do_render:
+            bpy.ops.render.render(animation=True)
+        else:
+            with bpy.context.temp_override(area=area):
+                bpy.ops.render.opengl(animation=True)
+
+        # Export Audio if needed
+        if self.do_export_audio:
+            print("Exporting Audio")
+            audio_path = os.path.join(tmpdir.name, "sound.mp3")
+            bpy.ops.sound.mixdown(
+                filepath=audio_path,
+                relative_path=False,
+                container='MP3',
+                codec='MP3',
+                format='S32',
+                bitrate=256,
+                accuracy=512,
+            )
+            data["audio_file"] = audio_path
+
+        # Start sequence marker and movie creation
+        sequence_marker = SequenceMarker(
+            os.path.join(tmpdir.name, "tmp_image.0000.tif"), data, template
+        )
+
+        if self.do_autoplay:
+            sequence_marker.play_movie()
+        sequence_marker.render_video(self.do_mark_images, self.video_codec)
+
+        # Restore original render settings
+        render.filepath = orig_filepath
+        render.use_file_extension = orig_use_file_extension
+        render.image_settings.file_format = orig_file_format
+        render.image_settings.color_depth = orig_color_depth
+        render.resolution_percentage = orig_resolution_percentage
+        render.use_simplify = orig_simplify
+        render.simplify_subdivision = orig_simplify_subdivision
+        render.simplify_subdivision_render = orig_simplify_subdivision_render
+        context.scene.eevee.taa_render_samples = orig_taa_render_samples
+        context.scene.eevee.taa_samples = orig_taa_samples
+        context.preferences.system.gl_texture_limit = orig_gl_texture_limit
+        context.scene.use_preview_range = orig_use_preview_range
+
+        if self.do_render:
+            if self.do_single_layer:
+                for layer in context.scene.view_layers:
+                    layer.use = view_layer_visibilities[layer.name]
+        else:
+            if space is not None:
+                # Restore viewport overlays
+                space.overlay.show_overlays = orig_overlay
+                space.shading.type = orig_shading_type
+                if not self.do_hide_overlays:
+                    space.overlay.show_ortho_grid = orig_show_ortho_grid
+                    space.overlay.show_floor = orig_show_floor
+                    space.overlay.show_axis_x = orig_show_axis_x
+                    space.overlay.show_axis_y = orig_show_axis_y
+                    space.overlay.show_axis_z = orig_show_axis_z
+                    space.overlay.show_cursor = orig_show_cursor
+                    space.overlay.show_relationship_lines = orig_show_relationship_lines
+                    space.overlay.show_motion_paths = orig_show_motion_paths
+                    space.overlay.show_outline_selected = orig_show_outline_selected
+                    space.overlay.show_object_origins = orig_show_object_origins
+            for c in bpy.data.collections:
+                c.hide_viewport = collection_viewport_visibility[c.name]
+            for o in bpy.data.objects:
+                o.hide_viewport = object_viewport_visibility[o.name]
+
+        # Restore original animatic statuses
+        for sequence in context.scene.sequence_editor.sequences:
+            if sequence.type == 'MOVIE':
+                sequence.mute = sequence["_muted"]
+                del sequence["_muted"]
+
+        render.use_sequencer = orig_use_sequencer
+        render.use_stamp = orig_use_stamp
+
+        tmpdir.cleanup()
+
+        print("Rendered playblast in %01.1fs" % (time() - start_time))
         return {'FINISHED'}
 
     def draw(self, context):
