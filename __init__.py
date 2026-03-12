@@ -137,6 +137,13 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         return True
 
     def execute(self, context):
+        if not any(self.filepath.endswith(ext) for ext in bpy.path.extensions_movie):
+            self.report(
+                {'ERROR'},
+                "Extension not supported. Choose one out of " + ", ".join(sorted(bpy.path.extensions_movie))
+            )
+            return {'CANCELLED'}
+
         start_time = time()
         tmpdir = tempfile.TemporaryDirectory()
         space = None
