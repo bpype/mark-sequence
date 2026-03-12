@@ -468,8 +468,11 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
 
     def draw(self, context):
         layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
 
         header, body = layout.panel("LFS_MARK_SEQ_RENDERING")
+        header.use_property_split = False
         header.label(text="Rendering")
         if body:
             col = body.column(align=True)
@@ -492,6 +495,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
             col.prop(self, "video_codec")
 
         header, body = layout.panel("LFS_MARK_SEQ_METADATA")
+        header.use_property_split = False
         header.prop(self, "do_mark_images", text="Mark Images")
         if body:
             col = body.column()
