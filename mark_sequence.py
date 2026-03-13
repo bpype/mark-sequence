@@ -232,7 +232,7 @@ class SequenceMarker:
                 elif field["name"] == "normalized_frame_number":
                     image_data["normalized_frame_number"] = i - self.data["offset"] + 1
                 elif field["name"] == "tc":
-                    image_data["tc"] = frame_to_timecode(i - self.data["offset"] + 1, self.data["frame_rate"])
+                    image_data["tc"] = frame_to_timecode(i - self.data["offset"] + 1, frame_rate)
                 elif field["name"] in self.data and type(self.data[field["name"]]) is dict:
                     image_data[field["name"]] = self.data[field["name"]][image_number]
 
