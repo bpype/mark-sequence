@@ -364,10 +364,6 @@ class SequenceMarker:
             print(e.returncode, e.cmd, e.stderr)
             raise e
 
-        # Remove subtitle file
-        if do_mark_images:
-            os.remove(ass_path)
-
     @staticmethod
     def get_sequence_path(sequence):
         padding = sequence.getPaddingNum(sequence.padding())
