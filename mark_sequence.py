@@ -161,7 +161,7 @@ class SequenceMarker:
         self.file_sequence = fileseq.findSequenceOnDisk(image_filepath, strictPadding=True)
         self.frame_set = self.file_sequence.frameSet()
 
-    def generate_ass_file(self):
+    def generate_ass_file(self, ass_path):
         settings = self.template["settings"]
         font_path = os.path.join(
             os.path.dirname(__file__),
@@ -282,12 +282,8 @@ class SequenceMarker:
             #         ]
             #     )
 
-        ass_descriptor, ass_path = mkstemp(suffix=".ass", text=True)
-        with os.fdopen(ass_descriptor, 'w') as ass_file:
+        with open(ass_path, 'w') as ass_file:
             ass_file.write(ass_text)
-        if platform.system() == "Windows":
-            ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
-        return ass_path
 
     def render_video(self, do_mark_images=True, video_codec='H264'):
         if not self.data["video_output"]:
@@ -329,7 +325,8 @@ class SequenceMarker:
 
         if do_mark_images:
             # Subtitles
-            ass_path = self.generate_ass_file()
+            ass_path = os.path.splitext(img_sources)[0] + ".ass"
+            self.generate_ass_file(ass_path)
             video_filter += f",[o]ass='{ass_path}'"
 
         ffmpeg_args.extend(["-vf", video_filter])
