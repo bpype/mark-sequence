@@ -327,6 +327,9 @@ class SequenceMarker:
 
             ass_path = os.path.splitext(img_sources)[0] + ".ass"
             self.generate_ass_file(ass_path)
+            if platform.system() == "Windows":
+                # Escape colon for FFmpeg on Windows, use forward slashes.
+                ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
             video_filter += f",[o]ass='{ass_path}'"
 
         ffmpeg_args.extend(["-vf", video_filter])
