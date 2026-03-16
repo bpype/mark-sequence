@@ -313,7 +313,7 @@ class SequenceMarker:
 
         # Overlay video on alpha
         # https://stackoverflow.com/a/52804884
-        video_filter += ("color=black, format=rgb24[c], "
+        video_filter += (f"color=black:rate={frame_rate}, format=rgb24[c], "
                          "[c][p]scale2ref[c][i],"
                          "[c][i]overlay=format=auto:shortest=1, setsar=1[o]")
 
