@@ -391,12 +391,12 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         # Export Audio if needed
         if self.do_export_audio:
             print("Exporting Audio")
-            audio_path = os.path.join(image_sequence_dir, f"{image_sequence_name}mp3")
+            audio_path = os.path.join(image_sequence_dir, f"{image_sequence_name}wav")
             bpy.ops.sound.mixdown(
                 filepath=audio_path,
                 relative_path=False,
-                container='MP3',
-                codec='MP3',
+                container='WAV',
+                codec='PCM',
                 format='S32',
                 bitrate=256,
                 accuracy=512,
