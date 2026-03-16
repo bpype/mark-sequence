@@ -317,14 +317,14 @@ class SequenceMarker:
                          "[c][p]scale2ref[c][i],"
                          "[c][i]overlay=format=auto:shortest=1, setsar=1[o]")
 
-        # # Background color
-        # # FIXME: lookup ASS' way to calculate text height.
-        # height = self.template["settings"]["font_size"] * 2
-        # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
-        # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
-
+        # Subtitles
         if do_mark_images:
-            # Subtitles
+            # # Background color
+            # # FIXME: lookup ASS' way to calculate text height.
+            # height = self.template["settings"]["font_size"] * 2
+            # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
+            # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
+
             ass_path = os.path.splitext(img_sources)[0] + ".ass"
             self.generate_ass_file(ass_path)
             video_filter += f",[o]ass='{ass_path}'"
