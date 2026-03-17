@@ -182,7 +182,7 @@ class SequenceMarker:
             Style: North,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,8,2,2,2,1
             Style: NorthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,9,2,2,2,1
             Style: East,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,6,2,2,2,1
-            Style: SouthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,1,1.5,3,2,2,2,1
+            Style: SouthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,3,2,2,2,1
             Style: South,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,2,2,2,2,1
             Style: SouthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,1,2,2,2,1
             Style: West,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,4,2,2,2,1
