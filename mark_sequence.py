@@ -179,14 +179,14 @@ class SequenceMarker:
 
             [V4+ Styles]
             Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-            Style: North,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,8,2,2,2,1
-            Style: NorthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,9,2,2,2,1
-            Style: East,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,6,2,2,2,1
-            Style: SouthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,3,2,2,2,1
-            Style: South,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,2,2,2,2,1
-            Style: SouthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,1,2,2,2,1
-            Style: West,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,4,2,2,2,1
-            Style: NorthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,7,2,2,2,1
+            Style: North,    {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,8,2,2,2,1
+            Style: NorthEast,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,9,2,2,2,1
+            Style: East,     {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,6,2,2,2,1
+            Style: SouthEast,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,3,2,2,2,1
+            Style: South,    {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,2,2,2,2,1
+            Style: SouthWest,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,1,2,2,2,1
+            Style: West,     {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,4,2,2,2,1
+            Style: NorthWest,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,7,2,2,2,1
 
             [Events]
             Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -195,7 +195,10 @@ class SequenceMarker:
             res_x=self.data["resolution_x"],
             res_y=self.data["resolution_y"],
             font_size=settings["font_size"],
-            color=settings["color"],
+            primary_color=settings["color"],
+            secondary_color="&HFF000000",  # Invisible.
+            outline_color="&H50000000",  # Dark gray.
+            back_color="&HFF000000",  # Invisible.
             font_path=font_path,
         )
 
