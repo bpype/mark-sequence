@@ -250,7 +250,7 @@ class SequenceMarker:
                     print(f"Could not evaluate field {field['name']}")
                     continue
                 field_value = image_data[field["name"]]
-                if not field_value:
+                if field_value is None:
                     continue
                 field_string %= field_value
                 if direction not in directions:
