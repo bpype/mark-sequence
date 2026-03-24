@@ -161,7 +161,7 @@ class SequenceMarker:
         self.file_sequence = fileseq.findSequenceOnDisk(image_filepath, strictPadding=True)
         self.frame_set = self.file_sequence.frameSet()
 
-    def generate_ass_file(self):
+    def generate_ass_file(self, ass_path):
         settings = self.template["settings"]
         font_path = os.path.join(
             os.path.dirname(__file__),
@@ -179,14 +179,14 @@ class SequenceMarker:
 
             [V4+ Styles]
             Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-            Style: North,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,8,2,2,2,1
-            Style: NorthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,9,2,2,2,1
-            Style: East,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,6,2,2,2,1
-            Style: SouthEast,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,1,1.5,3,2,2,2,1
-            Style: South,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,2,2,2,2,1
-            Style: SouthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,1,2,2,2,1
-            Style: West,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,4,2,2,2,1
-            Style: NorthWest,{font_path},{font_size},{color},&H000000FF,&H9F000000,&HFF000000,0,0,0,0,100,100,0,0,1,2,2,7,2,2,2,1
+            Style: North,    {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,8,2,2,2,1
+            Style: NorthEast,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,9,2,2,2,1
+            Style: East,     {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,6,2,2,2,1
+            Style: SouthEast,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,3,2,2,2,1
+            Style: South,    {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,2,2,2,2,1
+            Style: SouthWest,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,1,2,2,2,1
+            Style: West,     {font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,4,2,2,2,1
+            Style: NorthWest,{font_path},{font_size},{primary_color},{secondary_color},{outline_color},{back_color},0,0,0,0,100,100,0,0,1,2,2,7,2,2,2,1
 
             [Events]
             Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -195,7 +195,10 @@ class SequenceMarker:
             res_x=self.data["resolution_x"],
             res_y=self.data["resolution_y"],
             font_size=settings["font_size"],
-            color=settings["color"],
+            primary_color=settings["color"],
+            secondary_color="&HFF000000",  # Invisible.
+            outline_color="&H50000000",  # Dark gray.
+            back_color="&HFF000000",  # Invisible.
             font_path=font_path,
         )
 
@@ -232,7 +235,7 @@ class SequenceMarker:
                 elif field["name"] == "normalized_frame_number":
                     image_data["normalized_frame_number"] = i - self.data["offset"] + 1
                 elif field["name"] == "tc":
-                    image_data["tc"] = frame_to_timecode(i - self.data["offset"] + 1, self.data["frame_rate"])
+                    image_data["tc"] = frame_to_timecode(i - self.data["offset"] + 1, frame_rate)
                 elif field["name"] in self.data and type(self.data[field["name"]]) is dict:
                     image_data[field["name"]] = self.data[field["name"]][image_number]
 
@@ -247,7 +250,7 @@ class SequenceMarker:
                     print(f"Could not evaluate field {field['name']}")
                     continue
                 field_value = image_data[field["name"]]
-                if not field_value:
+                if field_value is None:
                     continue
                 field_string %= field_value
                 if direction not in directions:
@@ -282,12 +285,8 @@ class SequenceMarker:
             #         ]
             #     )
 
-        ass_descriptor, ass_path = mkstemp(suffix=".ass", text=True)
-        with os.fdopen(ass_descriptor, 'w') as ass_file:
+        with open(ass_path, 'w') as ass_file:
             ass_file.write(ass_text)
-        if platform.system() == "Windows":
-            ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
-        return ass_path
 
     def render_video(self, do_mark_images=True, video_codec='H264'):
         if not self.data["video_output"]:
@@ -317,19 +316,23 @@ class SequenceMarker:
 
         # Overlay video on alpha
         # https://stackoverflow.com/a/52804884
-        video_filter += ("color=black, format=rgb24[c], "
+        video_filter += (f"color=black:rate={frame_rate}, format=rgb24[c], "
                          "[c][p]scale2ref[c][i],"
                          "[c][i]overlay=format=auto:shortest=1, setsar=1[o]")
 
-        # # Background color
-        # # FIXME: lookup ASS' way to calculate text height.
-        # height = self.template["settings"]["font_size"] * 2
-        # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
-        # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
-
+        # Subtitles
         if do_mark_images:
-            # Subtitles
-            ass_path = self.generate_ass_file()
+            # # Background color
+            # # FIXME: lookup ASS' way to calculate text height.
+            # height = self.template["settings"]["font_size"] * 2
+            # video_filter += f"drawbox=w=in_w:h={height}:c=0x00000088:t=fill, "
+            # video_filter += f"drawbox=y=in_h-{height}:w=in_w:h={height}:c=0x00000088:t=fill, "
+
+            ass_path = os.path.splitext(img_sources)[0] + ".ass"
+            self.generate_ass_file(ass_path)
+            if platform.system() == "Windows":
+                # Escape colon for FFmpeg on Windows, use forward slashes.
+                ass_path = ass_path.replace("\\", "/").replace(":", "\\:")
             video_filter += f",[o]ass='{ass_path}'"
 
         ffmpeg_args.extend(["-vf", video_filter])
@@ -366,10 +369,6 @@ class SequenceMarker:
         except subprocess.CalledProcessError as e:
             print(e.returncode, e.cmd, e.stderr)
             raise e
-
-        # Remove subtitle file
-        if do_mark_images:
-            os.remove(ass_path)
 
     @staticmethod
     def get_sequence_path(sequence):
