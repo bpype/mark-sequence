@@ -195,6 +195,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         render = context.scene.render
         orig_filepath = render.filepath
         orig_use_file_extension = render.use_file_extension
+        if bpy.app.version >= (5, 0):
+            orig_media_type = render.image_settings.media_type
         orig_file_format = render.image_settings.file_format
         orig_color_depth = render.image_settings.color_depth
         orig_resolution_percentage = render.resolution_percentage
@@ -210,10 +212,20 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         orig_use_stamp = render.use_stamp
 
         # Store original animatic statuses
-        for sequence in context.scene.sequence_editor.sequences:
-            if sequence.type == 'MOVIE':
-                sequence["_muted"] = sequence.mute
-                sequence.mute = True
+        sequences = None
+        if bpy.app.version >= (5, 0):
+            seq_scene = context.sequencer_scene
+            strips = getattr(context, "strips", ())
+            if seq_scene and seq_scene.render.use_sequencer and strips:
+                sequences = strips
+        else:
+            sequences = context.scene.sequence_editor.sequences
+
+        if sequences is not None:
+            for sequence in sequences:
+                if sequence.type == 'MOVIE':
+                    sequence["_muted"] = sequence.mute
+                    sequence.mute = True
 
         # TODO: Store workbench settings in preview quality mode
 
@@ -235,6 +247,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         render.filepath = os.path.join(image_sequence_dir, image_sequence_name)
         render.resolution_percentage = 100
         render.use_file_extension = True
+        if bpy.app.version >= (5, 0):
+            render.image_settings.media_type = 'IMAGE'
         if self.image_sequence_path:
             render.image_settings.file_format = 'PNG'
         else:
@@ -415,6 +429,8 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         # Restore original render settings
         render.filepath = orig_filepath
         render.use_file_extension = orig_use_file_extension
+        if bpy.app.version >= (5, 0):
+            render.image_settings.media_type = orig_media_type
         render.image_settings.file_format = orig_file_format
         render.image_settings.color_depth = orig_color_depth
         render.resolution_percentage = orig_resolution_percentage
@@ -452,10 +468,11 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
                 o.hide_viewport = object_viewport_visibility[o.name]
 
         # Restore original animatic statuses
-        for sequence in context.scene.sequence_editor.sequences:
-            if sequence.type == 'MOVIE':
-                sequence.mute = sequence["_muted"]
-                del sequence["_muted"]
+        if sequences is not None:
+            for sequence in sequences:
+                if sequence.type == 'MOVIE':
+                    sequence.mute = sequence["_muted"]
+                    del sequence["_muted"]
 
         render.use_sequencer = orig_use_sequencer
         render.use_stamp = orig_use_stamp

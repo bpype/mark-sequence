@@ -147,7 +147,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         # Store original render settings
         orig_filepath = render.filepath
         orig_use_file_extension = render.use_file_extension
-        orig_file_format = render.image_settings.file_format
         orig_color_depth = render.image_settings.color_depth
         orig_taa_render_samples = context.scene.eevee.taa_render_samples
         orig_taa_samples = context.scene.eevee.taa_samples
@@ -167,7 +166,10 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         orig_stamp_note_text = render.stamp_note_text
 
         # Store original output settings
-        orig_file_format = render.image_settings.file_format
+        if bpy.app.version >= (5, 0):
+            orig_media_type = render.image_settings.media_type
+        else:
+            orig_file_format = render.image_settings.file_format
         orig_color_management = render.image_settings.color_management
         orig_ffmpeg_format = render.ffmpeg.format
         orig_ffmpeg_codec = render.ffmpeg.codec
@@ -203,7 +205,10 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         # Setup output settings
         render.filepath = self.filepath
         render.use_file_extension = True
-        render.image_settings.file_format = 'FFMPEG'
+        if bpy.app.version >= (5, 0):
+            render.image_settings.media_type = 'VIDEO'
+        else:
+            render.image_settings.file_format = 'FFMPEG'
         render.image_settings.color_management = 'FOLLOW_SCENE'
         render.ffmpeg.format = 'QUICKTIME'
         render.ffmpeg.codec = 'H264'
@@ -233,7 +238,6 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
         # Restore original render settings
         render.filepath = orig_filepath
         render.use_file_extension = orig_use_file_extension
-        render.image_settings.file_format = orig_file_format
         render.image_settings.color_depth = orig_color_depth
         context.scene.eevee.taa_render_samples = orig_taa_render_samples
         context.scene.eevee.taa_samples = orig_taa_samples
@@ -250,7 +254,10 @@ class LFS_OT_Viewport_Playblast(bpy.types.Operator):
                 layer.use = view_layer_visibilities[layer.name]
 
         # Restore original output settings
-        render.image_settings.file_format = orig_file_format
+        if bpy.app.version >= (5, 0):
+            render.image_settings.media_type = orig_media_type
+        else:
+            render.image_settings.file_format = orig_file_format
         render.image_settings.color_management = orig_color_management
         render.ffmpeg.format = orig_ffmpeg_format
         render.ffmpeg.codec = orig_ffmpeg_codec
