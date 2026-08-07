@@ -261,7 +261,7 @@ class LFS_OT_Playblast(bpy.types.Operator, ExportHelper):
         render.simplify_child_particles_render = 0.0
 
         if self.quality == 'PREVIEW':
-            render.engine = 'BLENDER_EEVEE' if bpy.app.version >= 5.2 else 'BLENDER_EEVEE_NEXT'
+            render.engine = 'BLENDER_EEVEE' if bpy.app.version >= (5, 2) else 'BLENDER_EEVEE_NEXT'
 
         if not self.do_render:
             if space is not None:
